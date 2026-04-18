@@ -1,0 +1,24 @@
+# Bỏ qua môi trường ảo Python
+venv/
+env/
+.venv/
+
+# Bỏ qua các file cache của Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Bỏ qua các tập dữ liệu thô và cơ sở dữ liệu cục bộ
+*.csv
+!raw_aqi_data.csv
+!processed_aqi_data.csv
+*.db
+*.sqlite3
+
+# Bỏ qua các file cấu hình hệ điều hành
+.DS_Store
+Thumbs.db
+
+# Bỏ qua các file log
+*.log
