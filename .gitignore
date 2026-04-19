@@ -19,6 +19,7 @@ __pycache__/
 
 # Bỏ qua các tập dữ liệu thô và cơ sở dữ liệu cục bộ
 *.csv
+*.parquet
 *.db
 *.sqlite3
 
