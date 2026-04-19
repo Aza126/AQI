@@ -1,0 +1,23 @@
+# Bạn làm chủ sở hữu mặc định cho toàn bộ project
+*                       @username_cua_ban
+
+# 1. Quản lý luồng chạy tự động (GitHub Actions)
+# Cực kỳ quan trọng vì file auto_crawl.yml điều khiển việc cào dữ liệu
+/.github/workflows/    @username_cua_ban
+
+# 2. Quản lý dữ liệu AQI (raw và processed)
+/data/                  @username_cua_ban
+
+# 3. Quản lý mã nguồn chính và Logic xử lý
+/src/                   @username_cua_ban
+/configs/               @username_cua_ban
+
+# 4. Quản lý giao diện hiển thị
+/dashboard/             @username_cua_ban
+
+# 5. Quản lý mô hình dự báo (nếu có AI/ML)
+/models/                @username_cua_ban
+
+# 6. Các file cấu hình cốt lõi
+/requirements.txt       @username_cua_ban
+/.gitignore             @username_cua_ban
