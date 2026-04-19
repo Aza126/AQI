@@ -1,4 +1,4 @@
-# Bạn làm chủ sở hữu mặc định cho toàn bộ project
+# Chủ sở hữu mặc định cho toàn bộ project
 *                       @Aza126
 
 # 1. Quản lý luồng chạy tự động (GitHub Actions)
@@ -15,7 +15,7 @@
 # 4. Quản lý giao diện hiển thị
 /dashboard/             @Aza126
 
-# 5. Quản lý mô hình dự báo (nếu có AI/ML)
+# 5. Quản lý mô hình dự báo
 /models/                @Aza126
 
 # 6. Các file cấu hình cốt lõi
