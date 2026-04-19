@@ -21,3 +21,8 @@
 # 6. Các file cấu hình cốt lõi
 /requirements.txt       @Aza126
 /.gitignore             @Aza126
+
+# 7. "Mở khóa" cho README.md
+# Liệt kê file nhưng để trống phần @username
+# Nguyên tắc của GitHub: Dòng phía dưới sẽ ghi đè dòng phía trên.
+README.md
