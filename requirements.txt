@@ -6,7 +6,7 @@ pymongo==4.16.0
 
 # --- Machine Learning (RF & LSTM) ---
 # Quan trọng: Giữ numpy < 2.0.0 để tránh lỗi tương thích với tensorflow/sklearn
-numpy>=1.24.0,<2.0.0
+numpy=2.4.4
 pandas==3.0.2
 scikit-learn==1.8.0
 tensorflow==2.21.0
