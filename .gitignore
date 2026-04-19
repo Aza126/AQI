@@ -2,6 +2,14 @@
 venv/
 env/
 .venv/
+.env/
+
+# Bỏ qua cấu hình của IDE
+.vscode/
+.idea/
+
+# Bỏ qua các file phân tích/phát triển
+.ipynb_checkpoints/
 
 # Bỏ qua các file cache của Python
 __pycache__/
@@ -11,8 +19,6 @@ __pycache__/
 
 # Bỏ qua các tập dữ liệu thô và cơ sở dữ liệu cục bộ
 *.csv
-!raw_aqi_data.csv
-!processed_aqi_data.csv
 *.db
 *.sqlite3
 
