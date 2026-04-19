@@ -1,28 +1,31 @@
 # Chủ sở hữu mặc định cho toàn bộ project
-*                       @Aza126
+* @Aza126
 
-# 1. Quản lý luồng chạy tự động (GitHub Actions)
-# Cực kỳ quan trọng vì file auto_crawl.yml điều khiển việc cào dữ liệu
-/.github/workflows/    @Aza126
-
-# 2. Quản lý dữ liệu AQI (raw và processed)
+# 1. Kỹ sư Dữ liệu (Data Engineer)
+# Phụ trách toàn bộ phân hệ trích xuất, làm sạch và lưu trữ dữ liệu
+/.github/workflows/     @Aza126
 /data/                  @Aza126
+/src/ingestion.py       @Aza126
+/src/preprocess.py      @Aza126
 
-# 3. Quản lý mã nguồn chính và Logic xử lý
-/src/                   @Aza126
-/configs/               @Aza126
+# 2. Hai Nhà Khoa học Dữ liệu (Mô hình RF & LSTM)
+# Trọng tâm vào kỹ thuật Feature Engineering và thiết lập mạng nơ-ron
+/models/                @Aza126
+# @DS_RF_Username @DS_LSTM_Username
+/src/models/            @Aza126
+# @DS_RF_Username @DS_LSTM_Username
+/src/inference.py       @Aza126
+# @DS_RF_Username @DS_LSTM_Username
 
-# 4. Quản lý giao diện hiển thị
+# 3. Kỹ sư Trực quan hóa & Tích hợp (Full-stack/BI)
+# Chịu trách nhiệm phát triển giao diện người dùng tương tác
 /dashboard/             @Aza126
 
-# 5. Quản lý mô hình dự báo
-/models/                @Aza126
-
-# 6. Các file cấu hình cốt lõi
+# 4. Các file cấu hình cốt lõi
+# Giữ quyền quản lý các file này để tránh xung đột môi trường cài đặt của cả nhóm
+/configs/               @Aza126
 /requirements.txt       @Aza126
 /.gitignore             @Aza126
 
-# 7. "Mở khóa" cho README.md
-# Liệt kê file nhưng để trống phần @username
-# Nguyên tắc của GitHub: Dòng phía dưới sẽ ghi đè dòng phía trên.
+# 5. "Mở khóa" cho README.md
 README.md
