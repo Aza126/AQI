@@ -17,6 +17,9 @@ __pycache__/
 *.pyo
 *.pyd
 
+# File models
+models/
+
 # Bỏ qua các tập dữ liệu thô và cơ sở dữ liệu cục bộ
 *.csv
 *.parquet
