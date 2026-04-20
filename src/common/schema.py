@@ -1,0 +1,5 @@
+FEATURE_COLUMNS = [
+    
+]
+TARGET_COLUMN = 'AQI'
+TIME_COLUMN = 'timestamp'
