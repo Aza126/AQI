@@ -7,6 +7,10 @@
 /data/                  @Aza126
 /src/ingestion.py       @Aza126
 /src/preprocess.py      @Aza126
+/src/schema.py          @Aza126
+/src/prepare_training_data.py  @Aza126
+/src/download_models.py @Aza126
+
 
 # 2. Hai Nhà Khoa học Dữ liệu (Mô hình RF & LSTM)
 # Trọng tâm vào kỹ thuật Feature Engineering và thiết lập mạng nơ-ron
