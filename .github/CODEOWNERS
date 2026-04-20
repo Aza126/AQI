@@ -11,11 +11,11 @@
 /src/prepare_training_data.py  @Aza126
 /src/download_models.py @Aza126
 
-
 # 2. Hai Nhà Khoa học Dữ liệu (Mô hình RF & LSTM)
 # Trọng tâm vào kỹ thuật Feature Engineering và thiết lập mạng nơ-ron
+/artifacts/             @Alepth64 @ThanhIsHere
 /models/                @Alepth64 @ThanhIsHere
-/src/models/            @Alepth64 @ThanhIsHere
+/src/training/          @Alepth64 @ThanhIsHere
 /src/inference.py       @Alepth64 @ThanhIsHere
 
 # 3. Kỹ sư Trực quan hóa & Tích hợp (Full-stack/BI)
