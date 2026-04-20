@@ -18,6 +18,7 @@ __pycache__/
 *.pyd
 
 # File models
+.env
 data/
 artifacts/
 models/
