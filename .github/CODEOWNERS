@@ -1,32 +1,43 @@
-# Chủ sở hữu mặc định cho toàn bộ project
+# DEFAULT OWNER
+# ========================
 * @Aza126
 
-# 1. Kỹ sư Dữ liệu (Data Engineer)
-# Phụ trách toàn bộ phân hệ trích xuất, làm sạch và lưu trữ dữ liệu
-/.github/workflows/     @Aza126
-/data/                  @Aza126
-/src/ingestion.py       @Aza126
-/src/preprocess.py      @Aza126
-/src/schema.py          @Aza126
+# CORE DATA CONTRACT
+# ========================
+/src/schema.py                 @Aza126 @Alepth64 @ThanhIsHere
+
+# DATA ENGINEERING
+# ========================
+/.github/workflows/            @Aza126
+/src/utils.py                  @Aza126
+
 /src/prepare_training_data.py  @Aza126
-/artifacts/             @Aza126
-/src/download_models.py @Aza126
+/src/download_models.py        @Aza126
 
-# 2. Hai Nhà Khoa học Dữ liệu (Mô hình RF & LSTM)
-# Trọng tâm vào kỹ thuật Feature Engineering và thiết lập mạng nơ-ron
-/models/                @Alepth64 @ThanhIsHere
-/src/training/          @Alepth64 @ThanhIsHere
-/src/inference.py       @Alepth64 @ThanhIsHere
+/src/ingestion.py              @Aza126
+/src/preprocess.py             @Aza126
+/src/inference.py              @Aza126
 
-# 3. Kỹ sư Trực quan hóa & Tích hợp (Full-stack/BI)
-# Chịu trách nhiệm phát triển giao diện người dùng tương tác
-/dashboard/             @Aza126
 
-# 4. Các file cấu hình cốt lõi
-# Giữ quyền quản lý các file này để tránh xung đột môi trường cài đặt của cả nhóm
-/configs/               @Aza126
-/requirements.txt       @Aza126
-/.gitignore             @Aza126
+# MODEL TRAINING
+# ========================
+/models/                       @Alepth64 @ThanhIsHere
+/src/train/                    @Alepth64 @ThanhIsHere
 
-# 5. "Mở khóa" cho README.md
+# DASHBOARD
+# ========================
+/dashboard/                    @Aza126
+
+# CONFIG 
+# ========================
+/configs/                      
+/requirements.txt              @Aza126
+/.gitignore                    @Aza126
+
+# NO OWNER (auto / generated)
+# ========================
+# data/, artifacts/, models weights download → handled outside git
+
+# OPEN FILE
+# ========================
 README.md
