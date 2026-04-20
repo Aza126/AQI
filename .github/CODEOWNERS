@@ -10,12 +10,9 @@
 
 # 2. Hai Nhà Khoa học Dữ liệu (Mô hình RF & LSTM)
 # Trọng tâm vào kỹ thuật Feature Engineering và thiết lập mạng nơ-ron
-/models/                @Aza126
-# @DS_RF_Username @DS_LSTM_Username
-/src/models/            @Aza126
-# @DS_RF_Username @DS_LSTM_Username
-/src/inference.py       @Aza126
-# @DS_RF_Username @DS_LSTM_Username
+/models/                @Aleph64 @ThanhIsHere
+/src/models/            @Aleph64 @ThanhIsHere
+/src/inference.py       @Aleph64 @ThanhIsHere
 
 # 3. Kỹ sư Trực quan hóa & Tích hợp (Full-stack/BI)
 # Chịu trách nhiệm phát triển giao diện người dùng tương tác
