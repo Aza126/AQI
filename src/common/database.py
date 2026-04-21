@@ -1,6 +1,9 @@
 from pymongo import MongoClient
 from .config_utils import get_env, get_config # Import từ file utils
 
+# ========================
+# MONGODB CONNECTION
+# ========================
 _client = None
 
 def get_mongo_client():
