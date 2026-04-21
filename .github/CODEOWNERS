@@ -4,15 +4,19 @@
 
 # CORE DATA CONTRACT
 # ========================
-/src/schema.py                 @Aza126 @Alepth64 @ThanhIsHere
+/src/common/schema.py          @Aza126
 
 # DATA ENGINEERING
 # ========================
-/.github/workflows/            @Aza126
-/src/utils.py                  @Aza126
+/.github/                      @Aza126
 
-/src/prepare_training_data.py  @Aza126
-/src/download_models.py        @Aza126
+/src/common/__init__.py        @Aza126
+/src/common/schema.py          @Aza126
+/src/common/database.py        @Aza126
+/src/common/utils.py           @Aza126
+
+/src/scripts/prepare_training_data.py  @Aza126
+/src/scripts/download_models.py        @Aza126
 
 /src/ingestion.py              @Aza126
 /src/preprocess.py             @Aza126
@@ -21,7 +25,7 @@
 
 # MODEL TRAINING
 # ========================
-/src/training/                    @Alepth64 @ThanhIsHere
+/src/training/                 @Alepth64 @ThanhIsHere
 
 # DASHBOARD
 # ========================
@@ -32,6 +36,7 @@
 /configs/                      
 /requirements.txt              @Aza126
 /.gitignore                    @Aza126
+/.env.example                  @Aza126
 
 # NO OWNER (auto / generated)
 # ========================
