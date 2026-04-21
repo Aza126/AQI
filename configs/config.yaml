@@ -1,4 +1,28 @@
-API_KEY = ""
+app:
+  name: "AQI Dashboard"
+
+api:
+  base_url: "https://air-quality-api.open-meteo.com/v1/air-quality"
 
 mongo:
-  db_name: "dbUser"
+  db_name: "htpUser"
+  raw_collection: "db_raw"
+  prediction_collection: "db_predictions"
+
+model:
+  rf:
+    path: "models/rf/rf_v1.pkl"
+    version: "v1"
+  lstm:
+    path: "models/lstm/lstm_v1.h5"
+    version: "v1"
+
+artifacts:
+  scaler_path: "artifacts/scaler.pkl"
+  training_data_path: "artifacts/training_data_scaled.parquet"
+
+inference:
+  run_models:
+    - rf
+    - lstm
+

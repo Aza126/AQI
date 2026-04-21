@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 # ========================
 # TIME
 # ========================
@@ -46,6 +49,14 @@ MODEL_INPUT_COLUMNS = FEATURE_COLUMNS
 # VALIDATION
 # ========================
 def validate_columns(df):
-    missing = set(MODEL_INPUT_COLUMNS) - set(df.columns)
+    cols = set(df.columns)
+
+    missing = set(MODEL_INPUT_COLUMNS) - cols
     if missing:
         raise ValueError(f"Missing columns: {missing}")
+
+    extra = cols - set(MODEL_INPUT_COLUMNS)
+    if extra:
+        logger.warning(f"Extra columns ignored: {extra}")
+
+    return True
