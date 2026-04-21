@@ -1,4 +1,4 @@
-mport sys
+import sys
 import os
 
 # Chỉ đường cho Python nhận diện thư mục src
