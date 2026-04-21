@@ -58,31 +58,6 @@ def load_config(path: str = "configs/config.yaml") -> Dict[str, Any]:
 
     return config
 
-# ========================
-# MONGODB
-# ========================
-_client = None
-
-def get_mongo_client():
-    global _client
-    if _client is None:
-        uri = get_env("MONGO_URI")
-        logger.info("Connecting to MongoDB...")
-        _client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-    return _client
-
-
-def get_database(config: dict):
-    client = get_mongo_client()
-    db_name = get_config(config, "mongo", "db_name")
-    return client[db_name]
-
-
-def get_collection(config: dict, key: str):
-    db = get_database(config)
-    name = get_config(config, "mongo", key)
-    return db[name]
-
 
 # ========================
 # FILE UTILS
