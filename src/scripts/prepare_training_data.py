@@ -25,6 +25,10 @@ def run_prepare_training():
 
     df = pd.DataFrame(data)
     df = add_time_features(df)
+    # Thay vì chỉ: df = df.dropna(subset=MODEL_INPUT_COLUMNS)
+    # Hãy thêm dòng nội suy vào trước đó:
+    df[RAW_COLUMNS] = df[RAW_COLUMNS].interpolate(method='linear', limit_direction='both')
+    df = df.dropna(subset=MODEL_INPUT_COLUMNS) # Chỉ drop những dòng ở rìa không thể nội suy
     df = df.dropna(subset=MODEL_INPUT_COLUMNS)
 
     X = df[MODEL_INPUT_COLUMNS]
