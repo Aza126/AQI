@@ -21,7 +21,10 @@ def add_time_features(df: pd.DataFrame):
 def preprocess_df(df: pd.DataFrame, scaler):
     df = df.copy()
     df = add_time_features(df)
-    df = df.dropna(subset=MODEL_INPUT_COLUMNS)
+    # Thay vì chỉ: df = df.dropna(subset=MODEL_INPUT_COLUMNS)
+    # Hãy thêm dòng nội suy vào trước đó:
+    df[RAW_COLUMNS] = df[RAW_COLUMNS].interpolate(method='linear', limit_direction='both')
+    df = df.dropna(subset=MODEL_INPUT_COLUMNS) # Chỉ drop những dòng ở rìa không thể nội suy
 
     X = df[MODEL_INPUT_COLUMNS]
     validate_columns(X)
