@@ -23,8 +23,6 @@ def transform_raw(data: dict, city_name: str):
     for i, t in enumerate(times):
         # Convert ISO string to datetime object for MongoDB Time Series
         dt_obj = datetime.fromisoformat(t) if isinstance(t, str) else t
-        # Chuyển về giờ Việt Nam
-        dt_obj = dt_obj.replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Asia/Ho_Chi_Minh"))
         
         record = {
             TIME_COLUMN: dt_obj,
