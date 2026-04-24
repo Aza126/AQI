@@ -1,4 +1,8 @@
 import numpy as np
+import os
+# Lệnh này giúp tắt bớt các cảnh báo xám vô hại của TensorFlow cho Terminal gọn gàng
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+import tensorflow as tf
 from tensorflow.keras.models import load_model
 
 from src.common.utils import load_config, load_pickle, logger
@@ -17,7 +21,8 @@ def load_models(config):
 
     if "lstm" in run_models:
         lstm_path = config["model"]["lstm"]["path"]
-        models["lstm"] = load_model(lstm_path)
+        # Thêm custom_objects để fix lỗi deserialize
+        models["lstm"] = load_model(lstm_path, custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
         logger.info("Loaded LSTM model")
 
     return models

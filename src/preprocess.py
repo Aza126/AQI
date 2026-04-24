@@ -7,7 +7,8 @@ from src.common.schema import (
     MODEL_INPUT_COLUMNS,
     validate_columns,
     TIME_COLUMN,
-    META_COLUMN
+    META_COLUMN,
+    RAW_COLUMNS
 )
 
 def add_time_features(df: pd.DataFrame):
@@ -63,6 +64,11 @@ def run_preprocess():
             record[col] = float(X_scaled[i][j])
             
         processed_records.append(record)
+
+    processed_col = get_collection(config, "processed_collection")
+    # CHIẾN THUẬT: Xóa dữ liệu cũ trước khi chèn mới để tránh trùng lặp
+    # Hoặc tốt hơn: Chỉ lấy dữ liệu chưa được xử lý (nhưng đơn giản nhất là xóa cũ)
+    processed_col.delete_many({}) 
 
     if processed_records:
         processed_col.insert_many(processed_records)

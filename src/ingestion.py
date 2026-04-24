@@ -1,15 +1,18 @@
+# src/ingestion.py
 import requests
+import pandas as pd
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from src.common.utils import load_config, logger
-from src.common.database import get_collection
-from src.common.schema import TIME_COLUMN, META_COLUMN, RAW_COLUMNS
+from src.common import load_config, logger, get_collection, TIME_COLUMN, META_COLUMN, RAW_COLUMNS
 
 def fetch_air_quality(lat: float, lon: float, base_url: str):
     params = {
         "latitude": lat,
         "longitude": lon,
-        "hourly": ",".join(RAW_COLUMNS)
+        "hourly": ",".join(RAW_COLUMNS),
+        "timezone": "UTC", # Quan trọng: Luôn lấy giờ chuẩn UTC
+        "past_days": 7, # Lấy dữ liệu của 7 ngày trước đó
+        "forecast_days": 1 # Chỉ lấy thêm 1 ngày dự báo (hoặc set = 0 nếu chỉ muốn lấy quá khứ)
     }
     response = requests.get(base_url, params=params)
     response.raise_for_status()
@@ -21,8 +24,8 @@ def transform_raw(data: dict, city_name: str):
     records = []
 
     for i, t in enumerate(times):
-        # Convert ISO string to datetime object for MongoDB Time Series
-        dt_obj = datetime.fromisoformat(t) if isinstance(t, str) else t
+        # Lưu vào MongoDB dưới dạng object datetime (UTC)
+        dt_obj = datetime.fromisoformat(t).replace(tzinfo=ZoneInfo("UTC"))
         
         record = {
             TIME_COLUMN: dt_obj,
@@ -31,10 +34,11 @@ def transform_raw(data: dict, city_name: str):
 
         for col in RAW_COLUMNS:
             values = hourly.get(col, [])
-            record[col] = values[i] if i < len(values) else None
+            # Chuyển về float để tránh lỗi định dạng khi training
+            val = values[i] if i < len(values) else None
+            record[col] = float(val) if val is not None else None
 
         records.append(record)
-
     return records
 
 def run_ingestion():
@@ -46,16 +50,19 @@ def run_ingestion():
 
     all_records = []
     for loc in locations:
-        logger.info(f"Fetching data for {loc['name']}")
-        data = fetch_air_quality(loc["lat"], loc["lon"], base_url)
-        records = transform_raw(data, loc["name"])
-        all_records.extend(records)
+        try:
+            logger.info(f"Fetching data for {loc['name']}")
+            data = fetch_air_quality(loc["lat"], loc["lon"], base_url)
+            records = transform_raw(data, loc["name"])
+            all_records.extend(records)
+        except Exception as e:
+            logger.error(f"Failed to fetch {loc['name']}: {e}")
 
     if all_records:
+        # Xóa dữ liệu cũ (tùy chọn) hoặc chỉ insert mới
+        collection.delete_many({}) 
         collection.insert_many(all_records)
         logger.info(f"Inserted {len(all_records)} raw records.")
-
-    logger.info("Ingestion done.")
 
 if __name__ == "__main__":
     run_ingestion()
