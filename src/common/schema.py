@@ -18,9 +18,9 @@ TARGET_COLUMN = "aqi"
 RAW_COLUMNS = [
     "pm2_5",
     "pm10",
-    "temperature",
-    "humidity",
-    "wind_speed"
+    "nitrogen_dioxide",
+    "ozone",
+    "carbon_monoxide"
 ]
 
 # ========================
@@ -29,9 +29,9 @@ RAW_COLUMNS = [
 FEATURE_COLUMNS = [
     "pm2_5",
     "pm10",
-    "temperature",
-    "humidity",
-    "wind_speed",
+    "nitrogen_dioxide",
+    "ozone",
+    "carbon_monoxide",
     "hour_sin",
     "hour_cos"
 ]
