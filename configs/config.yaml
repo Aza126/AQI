@@ -1,12 +1,51 @@
 app:
   name: "AQI Dashboard"
 
+locations:
+  - name: "Ha Noi"
+    lat: 21.0285
+    lon: 105.8542
+  - name: "Ho Chi Minh"
+    lat: 10.8231
+    lon: 106.6297
+  - name: "Da Nang"
+    lat: 16.0678
+    lon: 108.2208
+  - name: "Hai Phong"
+    lat: 20.8449
+    lon: 106.6881
+  - name: "Can Tho"
+    lat: 10.0452
+    lon: 105.7469
+  - name: "Hue"
+    lat: 16.4637
+    lon: 107.5909
+  - name: "Nha Trang"
+    lat: 12.2388
+    lon: 109.1967
+  - name: "Da Lat"
+    lat: 11.9404
+    lon: 108.4583
+  - name: "Vung Tau"
+    lat: 10.3460
+    lon: 107.0843
+  - name: "Quy Nhon"
+    lat: 13.7833
+    lon: 109.2167
+  - name: "Vinh"
+    lat: 18.6667
+    lon: 105.6667
+  - name: "Ha Long"
+    lat: 20.9505
+    lon: 107.0733
+
 api:
   base_url: "https://air-quality-api.open-meteo.com/v1/air-quality"
 
 mongo:
   db_name: "htpUser"
   raw_collection: "db_raw"
+  processed_collection: "db_processed"
   prediction_collection: "db_predictions"
 
 model:
@@ -25,4 +64,3 @@ inference:
   run_models:
     - rf
     - lstm
-

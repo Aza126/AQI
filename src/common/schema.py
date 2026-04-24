@@ -2,28 +2,26 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ========================
-# TIME
+# TIME & META (For MongoDB Time Series)
 # ========================
 TIME_COLUMN = "timestamp"
-
+META_COLUMN = "city"
 
 # ========================
 # TARGET
 # ========================
 TARGET_COLUMN = "aqi"
 
-
 # ========================
-# RAW DATA (từ API)
+# RAW DATA
 # ========================
 RAW_COLUMNS = [
     "pm2_5",
     "pm10",
-    "temperature",
-    "humidity",
-    "wind_speed"
+    "nitrogen_dioxide",
+    "ozone",
+    "carbon_monoxide"
 ]
-
 
 # ========================
 # FEATURE ENGINEERING
@@ -31,19 +29,17 @@ RAW_COLUMNS = [
 FEATURE_COLUMNS = [
     "pm2_5",
     "pm10",
-    "temperature",
-    "humidity",
-    "wind_speed",
+    "nitrogen_dioxide",
+    "ozone",
+    "carbon_monoxide",
     "hour_sin",
     "hour_cos"
 ]
-
 
 # ========================
 # MODEL INPUT
 # ========================
 MODEL_INPUT_COLUMNS = FEATURE_COLUMNS
-
 
 # ========================
 # VALIDATION
