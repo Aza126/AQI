@@ -8,16 +8,19 @@ Air Quality Index Dashboard - for an assignment
 
 #### Steps for training models
 
-###### B1: Clone
+###### B1: Clone and create virtual environment
 ```bash
 git clone git@github:Aza126/AQI.git
 # spam 'Enter'
-```
- ###### B2: Set up virtual environment
-```bash
 cd AQI
 python -m venv .venv
+```
+ ###### B2: Activate virtual environment
+```bash
+# Linux/MacOS
 source .venv/bin/activate
+# Windows
+.venv/Scripts/activate
 ```
 ###### B3: Create .env -> ask Aza for the words needed
 ```bash
@@ -44,7 +47,20 @@ python -m src.scripts.download_models
 python -m src.inference
 python -m streamlit run dashboard/app.py
 ```
-###### B8: Save your `rf.pkl` and `lstm.h5` to Google Drive
+###### B8: Push your code to remote repo using other branches
+```bash
+git switch -c feature/rf
+git add src/training/rf.py
+git commit -m "Update rf.py"
+git push -u origin feature/rf
+
+git switch main
+git switch -c feature/lstm
+git add src/training/lstm.py
+git commit -m "Update lstm.py"
+git push -u origin feature/lstm
+```
+###### B9: Save your `rf.pkl` and `lstm.h5` to Google Drive
 ```bash
 # Replace the old empty ones
 ```
