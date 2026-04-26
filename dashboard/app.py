@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import folium
+from streamlit_folium import st_folium
 from src.common import load_config, get_collection, TIME_COLUMN, META_COLUMN
 
 st.set_page_config(page_title="AQI Dashboard", layout="wide")
@@ -94,3 +96,16 @@ if not df_actual.empty:
 else:
     st.warning(f"Chưa có dữ liệu cho {selected_city}. Vui lòng chạy ingestion.py trước.")
 
+st.subheader("📍 Mạng lưới quan trắc")
+# Tạo bản đồ tập trung tại Việt Nam
+m = folium.Map(location=[16.0, 108.0], zoom_start=5, control_scale=True)
+
+for loc in config['locations']:
+    folium.Marker(
+        [loc['lat'], loc['lon']],
+        popup=loc['name'],
+        tooltip=loc['name'],
+        icon=folium.Icon(color='red', icon='info-sign')
+    ).add_to(m)
+
+st_folium(m, width=1300, height=400)
