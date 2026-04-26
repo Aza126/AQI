@@ -1,3 +1,4 @@
+# src/common/database.py
 from pymongo import MongoClient
 from src.common.utils import get_env, get_config
 
