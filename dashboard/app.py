@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import folium
 from streamlit_folium import st_folium
+from folium.plugins import HeatMap
 from src.common import load_config, get_collection, TIME_COLUMN, META_COLUMN
 
 st.set_page_config(page_title="AQI Dashboard", layout="wide")
@@ -96,16 +97,28 @@ if not df_actual.empty:
 else:
     st.warning(f"Chưa có dữ liệu cho {selected_city}. Vui lòng chạy ingestion.py trước.")
 
-st.subheader("📍 Mạng lưới quan trắc")
-# Tạo bản đồ tập trung tại Việt Nam
+# Heatmap
+st.subheader("📍 Mạng lưới quan trắc & Mật độ ô nhiễm")
 m = folium.Map(location=[16.0, 108.0], zoom_start=5, control_scale=True)
 
+# Chuẩn bị dữ liệu cho Heatmap: List các [lat, lon, độ_nặng]
+heat_data = []
 for loc in config['locations']:
-    folium.Marker(
-        [loc['lat'], loc['lon']],
+    # Lấy giá trị AQI thực tế của thành phố đó từ db (ví dụ lấy latest_aqi)
+    # Ở đây mình giả định một giá trị cường độ để minh họa
+    heat_data.append([loc['lat'], loc['lon'], 0.8]) # 0.8 là độ đậm nhạt
+
+# Thêm lớp Heatmap vào bản đồ
+HeatMap(heat_data, radius=25, blur=15, min_opacity=0.5).add_to(m)
+
+# Vẫn giữ marker để xem tên thành phố
+for loc in config['locations']:
+    folium.CircleMarker(
+        location=[loc['lat'], loc['lon']],
+        radius=5,
         popup=loc['name'],
-        tooltip=loc['name'],
-        icon=folium.Icon(color='red', icon='info-sign')
+        color='black',
+        fill=True
     ).add_to(m)
 
-st_folium(m, width=1300, height=400)
+st_folium(m, width=1300, height=500)
