@@ -14,6 +14,7 @@ git clone git@github:Aza126/AQI.git
 # 'yes', spam 'Enter'
 cd AQI
 python -m venv .venv
+mkdir -p artifacts models/rf models/lstm
 ```
 ###### B2: Activate virtual environment
 ```bash
