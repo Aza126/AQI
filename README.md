@@ -13,17 +13,18 @@ Air Quality Index Dashboard - for an assignment
 git clone git@github:Aza126/AQI.git
 # spam 'Enter'
 ```
-###### B2: Create .env -> ask Aza for the words needed
+ ###### B2: Set up virtual environment
+```bash
+cd AQI
+python -m venv .venv
+source .venv/bin/activate
+```
+###### B3: Create .env -> ask Aza for the words needed
 ```bash
 cp .env.example .env
 # or
 copy .env.example .env
 # replace some words in .env
-```
-###### B3: Set up virtual environment
-```bash
-python -m venv .venv
-source .venv/bin/activate
 ```
 ###### B4: Download needed librabies
 ```bash
