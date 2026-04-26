@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 DRIVE_FILES = {
     "artifacts/scaler.pkl": "1IJ8Ajxpf84BBnE1nXAYmz6H6J9H-EYib",
     "artifacts/training_data_scaled.parquet": "1TAi6PXTDq6bxBUYlQWO-_YLJlgxhQ_h8",
-    "models/rf/rf_v1.pkl": "FILE_ID_CUA_RF",
-    "models/lstm/lstm_v1.h5": "FILE_ID_CUA_LSTM"
+    "models/rf/rf_v1.pkl": "1z6Mzo-2ICk2E5Fm_EdzKnxopMcl9LVn0",
+    "models/lstm/lstm_v1.h5": "1B-McC03_WGM74ydbf_j5ysOlC3ZXVZ2I"
 }
 
 def download_artifact_and_model_files():
