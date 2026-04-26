@@ -1,5 +1,7 @@
+# src/preprocess.py
 import pandas as pd
 import numpy as np
+from pymongo import UpdateOne
 
 from src.common.utils import load_config, load_pickle, logger
 from src.common.database import get_collection
@@ -66,13 +68,20 @@ def run_preprocess():
         processed_records.append(record)
 
     processed_col = get_collection(config, "processed_collection")
-    # CHIẾN THUẬT: Xóa dữ liệu cũ trước khi chèn mới để tránh trùng lặp
-    # Hoặc tốt hơn: Chỉ lấy dữ liệu chưa được xử lý (nhưng đơn giản nhất là xóa cũ)
-    processed_col.delete_many({}) 
+    operations = []
+    for record in processed_records:
+        # Dùng cặp (Time + City) để nhận diện bản ghi đã qua xử lý
+        filter_query = {
+            TIME_COLUMN: record[TIME_COLUMN],
+            META_COLUMN: record[META_COLUMN]
+        }
+        operations.append(UpdateOne(filter_query, {"$set": record}, upsert=True))
 
-    if processed_records:
-        processed_col.insert_many(processed_records)
-        logger.info(f"Inserted {len(processed_records)} processed records.")
+    if operations:
+        # Thay vì xóa sạch, ta chỉ cập nhật hoặc chèn mới
+        result = processed_col.bulk_write(operations)
+        logger.info(f"Processed sync done: {result.upserted_count} new, {result.modified_count} updated.")
+
 
     return X_scaled, df_processed
 

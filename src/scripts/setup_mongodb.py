@@ -1,3 +1,4 @@
+# src/scripts/setup_mongodb.py
 import sys
 import os
 

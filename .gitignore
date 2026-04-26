@@ -1,3 +1,4 @@
+# .gitignore
 # Bỏ qua môi trường ảo Python
 venv/
 env/

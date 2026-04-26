@@ -5,61 +5,92 @@ from src.common import load_config, get_collection, TIME_COLUMN, META_COLUMN
 
 st.set_page_config(page_title="AQI Dashboard", layout="wide")
 
-def load_data():
+# Sử dụng cache để không nạp lại config nhiều lần
+@st.cache_resource
+def get_db_collections():
     config = load_config()
-    raw_col = get_collection(config, "raw_collection")
-    pred_col = get_collection(config, "prediction_collection")
+    return get_collection(config, "raw_collection"), get_collection(config, "prediction_collection"), config
+
+def load_city_data(selected_city):
+    raw_col, pred_col, _ = get_db_collections()
     
-    # Lấy dữ liệu và chuyển sang DataFrame
-    actual_df = pd.DataFrame(list(raw_col.find().sort(TIME_COLUMN, -1).limit(500)))
-    pred_df = pd.DataFrame(list(pred_col.find().sort(TIME_COLUMN, -1).limit(500)))
+    # Tối ưu: Lọc ngay tại MongoDB thay vì load hết về rồi mới lọc bằng Pandas
+    query = {META_COLUMN: selected_city}
     
-    return actual_df, pred_df, config
+    actual_data = list(raw_col.find(query).sort(TIME_COLUMN, -1).limit(100))
+    pred_data = list(pred_col.find(query).sort(TIME_COLUMN, -1).limit(200))
+    
+    return pd.DataFrame(actual_data), pd.DataFrame(pred_data)
 
-st.title("📈 Đối chiếu Quỹ đạo Ô nhiễm")
+st.title("🌍 AQI Real-time Monitoring & Prediction")
 
-actual, pred, config = load_data()
+raw_col_init, _, config = get_db_collections()
+all_cities = [loc['name'] for loc in config['locations']]
 
-if not actual.empty:
-    # --- Sidebar lọc thành phố ---
-    cities = actual[META_COLUMN].unique()
-    selected_city = st.sidebar.selectbox("Chọn thành phố", cities)
+# --- Sidebar ---
+st.sidebar.header("Cấu hình bộ lọc")
+selected_city = st.sidebar.selectbox("📍 Chọn thành phố", all_cities)
+num_hours = st.sidebar.slider("Số giờ hiển thị", 12, 168, 48)
 
-    # Lọc dữ liệu theo thành phố đã chọn
-    city_actual = actual[actual[META_COLUMN] == selected_city].sort_values(TIME_COLUMN)
-    city_pred = pred[pred[META_COLUMN] == selected_city].sort_values(TIME_COLUMN)
+# Load dữ liệu
+df_actual, df_pred = load_city_data(selected_city)
 
+if not df_actual.empty:
+    df_actual = df_actual.sort_values(TIME_COLUMN)
+    latest_aqi = df_actual.iloc[-1].get('aqi', df_actual.iloc[-1].get('pm2_5', 0))
+    
+    # --- Row 1: Metrics (Các chỉ số nhanh) ---
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Chỉ số hiện tại", f"{latest_aqi:.1 f}")
+    with col2:
+        status = "Tốt" if latest_aqi <= 50 else "Trung bình" if latest_aqi <= 100 else "Kém"
+        st.metric("Trạng thái không khí", status)
+    with col3:
+        st.metric("Thành phố", selected_city)
+
+    # --- Row 2: Chart ---
     fig = go.Figure()
 
-    # Đường line thực tế (Sử dụng pm2_5 hoặc aqi nếu bạn đã tính ở bước trước)
-    y_col = "aqi" if "aqi" in city_actual.columns else "pm2_5"
-    
+    # 1. Đường thực tế
+    y_col = "aqi" if "aqi" in df_actual.columns else "pm2_5"
     fig.add_trace(go.Scatter(
-        x=city_actual[TIME_COLUMN], 
-        y=city_actual[y_col],
-        mode='lines', # Bỏ markers để đường mượt hơn
-        name=f'Thực tế ({selected_city})',
-        line=dict(color='#00d1ff', width=3)
+        x=df_actual[TIME_COLUMN], y=df_actual[y_col],
+        mode='lines+markers', name='Thực tế',
+        line=dict(color='#00d1ff', width=3),
+        marker=dict(size=4)
     ))
 
-    # Điểm dự báo RF
-    rf_pred = city_pred[city_pred["model"] == "rf"]
-    fig.add_trace(go.Scatter(
-        x=rf_pred[TIME_COLUMN], 
-        y=rf_pred["prediction"],
-        mode='markers', 
-        name='Dự báo (Random Forest)',
-        marker=dict(color='#ff4b4b', size=10, symbol='circle')
-    ))
+    if not df_pred.empty:
+        # 2. Dự báo từ Random Forest
+        rf_data = df_pred[df_pred["model"] == "rf"].sort_values(TIME_COLUMN)
+        fig.add_trace(go.Scatter(
+            x=rf_data[TIME_COLUMN], y=rf_data["prediction"],
+            mode='markers', name='Dự báo (RF)',
+            marker=dict(color='#ff4b4b', size=8, symbol='diamond')
+        ))
+
+        # 3. Dự báo từ LSTM
+        lstm_data = df_pred[df_pred["model"] == "lstm"].sort_values(TIME_COLUMN)
+        fig.add_trace(go.Scatter(
+            x=lstm_data[TIME_COLUMN], y=lstm_data["prediction"],
+            mode='lines', name='Dự báo (LSTM)',
+            line=dict(color='#00ff00', width=2, dash='dot')
+        ))
 
     fig.update_layout(
         template="plotly_dark",
-        xaxis_title="Thời gian",
-        yaxis_title="Chỉ số AQI",
+        xaxis_title="Thời gian (UTC)",
+        yaxis_title="Chỉ số (AQI/PM2.5)",
         hovermode="x unified",
-        height=600
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
 
     st.plotly_chart(fig, use_container_width=True)
+    
+    # --- Row 3: Data Table ---
+    with st.expander("Xem bảng dữ liệu chi tiết"):
+        st.dataframe(df_actual.tail(10), use_container_width=True)
 else:
-    st.write("Đang chờ dữ liệu từ database...")
+    st.warning(f"Chưa có dữ liệu cho {selected_city}. Vui lòng chạy ingestion.py trước.")
+
