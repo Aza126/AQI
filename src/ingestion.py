@@ -4,7 +4,6 @@ import pandas as pd
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from src.common import load_config, logger, get_collection, TIME_COLUMN, META_COLUMN, RAW_COLUMNS
-from pymongo import UpdateOne
 
 def fetch_air_quality(lat: float, lon: float, base_url: str):
     params = {
@@ -59,22 +58,11 @@ def run_ingestion():
         except Exception as e:
             logger.error(f"Failed to fetch {loc['name']}: {e}")
 
-    # Tạo danh sách các tác vụ Upsert
-    operations = []
-    for record in all_records:
-        # Cặp nhận diện duy nhất: Thời gian + Tên thành phố
-        filter_query = {
-            TIME_COLUMN: record[TIME_COLUMN],
-            META_COLUMN: record[META_COLUMN]
-        }
-        # Cập nhật toàn bộ dữ liệu mới vào bản ghi
-        update_query = {"$set": record}
-            
-        operations.append(UpdateOne(filter_query, update_query, upsert=True))
+    if all_records:
+        # Xóa dữ liệu cũ (tùy chọn) hoặc chỉ insert mới
+        collection.delete_many({}) 
+        collection.insert_many(all_records)
+        logger.info(f"Inserted {len(all_records)} raw records.")
 
-    # Thực thi đồng loạt (Bulk Write) để tối ưu hiệu năng
-    if operations:
-        result = collection.bulk_write(operations)
-        logger.info(f"Ingestion done: {result.upserted_count} new, {result.modified_count} updated.")
 if __name__ == "__main__":
     run_ingestion()
