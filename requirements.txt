@@ -1,3 +1,4 @@
+# requirements.txt
 # --- Core & API (DE) ---
 requests==2.33.1
 python-dotenv==1.2.2
