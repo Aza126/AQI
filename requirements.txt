@@ -3,6 +3,7 @@ requests==2.33.1
 python-dotenv==1.2.2
 PyYAML==6.0.3
 pymongo==4.16.0
+gdown==6.0.0
 
 # --- Machine Learning (RF & LSTM) ---
 numpy==2.4.4
