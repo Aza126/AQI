@@ -44,7 +44,7 @@ if not df_actual.empty:
     # --- Row 1: Metrics (Các chỉ số nhanh) ---
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Chỉ số hiện tại", f"{latest_aqi:.1 f}")
+        st.metric("Chỉ số hiện tại", f"{latest_aqi:.1f}")
     with col2:
         status = "Tốt" if latest_aqi <= 50 else "Trung bình" if latest_aqi <= 100 else "Kém"
         st.metric("Trạng thái không khí", status)
