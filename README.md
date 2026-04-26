@@ -6,7 +6,7 @@ Air Quality Index Dashboard - for an assignment
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Deep_Learning-orange.svg)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Automated-success.svg)
 
-#### Steps for training models
+##### Steps for training models
 
 ###### B1: Clone and create virtual environment
 ```bash
@@ -15,7 +15,7 @@ git clone git@github:Aza126/AQI.git
 cd AQI
 python -m venv .venv
 ```
- ###### B2: Activate virtual environment
+###### B2: Activate virtual environment
 ```bash
 # Linux/MacOS
 source .venv/bin/activate
