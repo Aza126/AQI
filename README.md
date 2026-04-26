@@ -46,6 +46,8 @@ python -m src.scripts.download_models
 # Test `rf_v1.pkl` and `lstm_v1.h5`
 python -m src.inference
 python -m streamlit run dashboard/app.py
+# How to stop testing
+Ctrl + C 
 ```
 ###### B8: Push your code to remote repo using other branches
 ```bash
