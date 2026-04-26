@@ -11,7 +11,7 @@ Air Quality Index Dashboard - for an assignment
 ###### B1: Clone and create virtual environment
 ```bash
 git clone git@github:Aza126/AQI.git
-# spam 'Enter'
+# 'yes', spam 'Enter'
 cd AQI
 python -m venv .venv
 ```
