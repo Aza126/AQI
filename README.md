@@ -40,16 +40,10 @@ python -m src.scripts.download_models
 ###### B6: Train your models
 ```bash
 # Write and run your `rf.py` and `lstm.py`
+# using data from `scaler.pkl` and `training_data_scaled.parquet`
+# to create models `rf_v1.pkl` and `lstm_v1.h5`
 ```
-###### B7: Test your models
-```bash
-# Test `rf_v1.pkl` and `lstm_v1.h5`
-python -m src.inference
-python -m streamlit run dashboard/app.py
-# How to stop testing
-Ctrl + C 
-```
-###### B8: Push your code to remote repo using other branches
+###### B7: Push your code to remote repo using other branches
 ```bash
 git switch -c feature/rf
 git add src/training/rf.py
@@ -62,7 +56,14 @@ git add src/training/lstm.py
 git commit -m "Update lstm.py"
 git push -u origin feature/lstm
 ```
-###### B9: Save your `rf.pkl` and `lstm.h5` to Google Drive
+###### B8: Save your `rf.pkl` and `lstm.h5` to Google Drive
 ```bash
 # Replace the old empty ones
+```
+###### If you wanna run dashboard
+```bash
+python -m src.inference
+python -m streamlit run dashboard/app.py
+# How to stop
+Ctrl + C 
 ```
