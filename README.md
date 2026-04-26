@@ -45,13 +45,14 @@ python -m src.scripts.download_models
 ```
 ###### B7: Push your code to remote repo using other branches
 ```bash
-git switch -c feature/rf
+git branch feature/rf feature/lstm
+
+git switch feature/rf
 git add src/training/rf.py
 git commit -m "Update rf.py"
 git push -u origin feature/rf
 
-git switch main
-git switch -c feature/lstm
+git switch feature/lstm
 git add src/training/lstm.py
 git commit -m "Update lstm.py"
 git push -u origin feature/lstm
