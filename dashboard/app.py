@@ -99,26 +99,41 @@ else:
 
 # Heatmap
 st.subheader("📍 Mạng lưới quan trắc & Mật độ ô nhiễm")
-m = folium.Map(location=[16.0, 108.0], zoom_start=5, control_scale=True)
 
-# Chuẩn bị dữ liệu cho Heatmap: List các [lat, lon, độ_nặng]
+# 1. Lấy dữ liệu thực tế mới nhất của tất cả thành phố để làm Heatmap
 heat_data = []
 for loc in config['locations']:
-    # Lấy giá trị AQI thực tế của thành phố đó từ db (ví dụ lấy latest_aqi)
-    # Ở đây mình giả định một giá trị cường độ để minh họa
-    heat_data.append([loc['lat'], loc['lon'], 0.8]) # 0.8 là độ đậm nhạt
+    # Lấy dữ liệu gần nhất của thành phố này từ df_actual (nếu có) 
+    # hoặc query nhanh từ DB
+    city_df = df_actual[df_actual[META_COLUMN] == loc['name']]
+    if not city_df.empty:
+        val = city_df.iloc[-1].get('pm2_5', 0)
+        # Format: [lat, lon, weight]
+        heat_data.append([loc['lat'], loc['lon'], float(val)])
 
-# Thêm lớp Heatmap vào bản đồ
-HeatMap(heat_data, radius=25, blur=15, min_opacity=0.5).add_to(m)
+m = folium.Map(location=[16.0, 108.0], zoom_start=5)
 
-# Vẫn giữ marker để xem tên thành phố
+# 2. Thêm lớp HeatMap
+if heat_data:
+    HeatMap(
+        heat_data,
+        name="Mật độ ô nhiễm",
+        min_opacity=0.3,     # Độ mờ tối thiểu
+        max_val=max([x[2] for x in heat_data]) if heat_data else 100, # Tỉ lệ màu dựa trên AQI cao nhất
+        radius=25,           # Bán kính điểm nhiệt (pixel)
+        blur=15,             # Độ nhòe để các điểm hòa vào nhau
+        scale_radius=False   # ĐỂ FALSE: điểm nhiệt giữ nguyên size pixel khi zoom (dễ nhìn)
+                             # ĐỂ TRUE: điểm nhiệt sẽ to ra/nhỏ lại theo tỉ lệ km trên bản đồ
+    ).add_to(m)
+
+# 3. Vẫn vẽ Marker để người dùng bấm vào xem tên
 for loc in config['locations']:
     folium.CircleMarker(
-        location=[loc['lat'], loc['lon']],
+        [loc['lat'], loc['lon']],
         radius=5,
         popup=loc['name'],
-        color='black',
+        color='blue',
         fill=True
     ).add_to(m)
 
-st_folium(m, width=1300, height=500)
+st_folium(m, width=1300, height=450)
