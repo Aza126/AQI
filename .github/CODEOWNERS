@@ -23,9 +23,10 @@
 /src/inference.py              @Aza126
 
 
-# MODEL TRAINING
+# MODEL TRAINING 
 # ========================
-/src/training/                 @Alepth64 @ThanhIsHere
+/src/training/rf.py            @ThanhIsHere
+/src/training/lstm.py          @Alepth64
 
 # DASHBOARD
 # ========================
