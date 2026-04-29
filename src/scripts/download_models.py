@@ -1,31 +1,43 @@
 # src/scripts/download_models.py
-import gdown
 import os
+import gdown
 import logging
+from src.common.utils import load_config, get_env
 
-logging.basicConfig(level=logging.INFO)
+# Cấu hình Logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
-# Thay thế bằng ID thực tế của bạn trên Google Drive
-DRIVE_FILES = {
-    "artifacts/scaler.pkl": "1IJ8Ajxpf84BBnE1nXAYmz6H6J9H-EYib",
-    "artifacts/training_data_scaled.parquet": "1TAi6PXTDq6bxBUYlQWO-_YLJlgxhQ_h8",
-    "models/rf/rf_v1.pkl": "1z6Mzo-2ICk2E5Fm_EdzKnxopMcl9LVn0",
-    "models/lstm/lstm_v1.h5": "1B-McC03_WGM74ydbf_j5ysOlC3ZXVZ2I"
-}
+def download_from_drive():
+    try:
+        config = load_config()
+        
+        # Ánh xạ từ cấu hình và biến môi trường
+        files_to_check = {
+            config["artifacts"]["scaler_path"]: get_env("DRIVE_ID_SCALER"),
+            config["artifacts"]["training_data_path"]: get_env("DRIVE_ID_TRAINING_DATA"),
+            config["model"]["rf"]["path"]: get_env("DRIVE_ID_RF"),
+            config["model"]["lstm"]["path"]: get_env("DRIVE_ID_LSTM")
+        }
+        
+        for file_path, drive_id in files_to_check.items():
+            if not drive_id:
+                logger.warning(f"Bỏ qua {file_path}: DRIVE_ID không tồn tại trong .env")
+                continue
 
-def download_artifact_and_model_files():
-    for file_path, drive_id in DRIVE_FILES.items():
-        # Đảm bảo thư mục tồn tại
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            if not os.path.exists(file_path):
+                logger.info(f"🚀 Đang tải {file_path} từ Google Drive (ID: {drive_id})...")
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                
+                # Sử dụng tham số id trực tiếp giúp gdown xử lý tốt hơn
+                gdown.download(id=drive_id, output=file_path, quiet=False)
+            else:
+                logger.info(f"✅ File {file_path} đã có sẵn cục bộ. Bỏ qua tải xuống.")
+                
+        logger.info("✨ Hoàn thành kiểm tra và tải các artifacts/models.")
         
-        url = f"https://drive.google.com/uc?id={drive_id}"
-        logger.info(f"Downloading {file_path} from Drive...")
-        
-        # Tải file xuống
-        gdown.download(url, file_path, quiet=False)
-        
-    logger.info("All artifacts and models downloaded successfully.")
+    except Exception as e:
+        logger.error(f"❌ Lỗi trong quá trình tải file: {e}")
 
 if __name__ == "__main__":
-    download_artifact_and_model_files()
+    download_from_drive()
