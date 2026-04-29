@@ -1,7 +1,7 @@
 # AQI
 Air Quality Index Dashboard - for an assignment
 
-![Python](https://img.shields.io/badge/Python-3.13+-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.12-blue.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red.svg)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Deep_Learning-orange.svg)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Automated-success.svg)
