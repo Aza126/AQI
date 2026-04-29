@@ -28,6 +28,7 @@ models/
 # Bỏ qua các tập dữ liệu thô và cơ sở dữ liệu cục bộ
 *.csv
 *.parquet
+*.pkl
 *.h5
 *.keras
 *.db
