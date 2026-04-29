@@ -41,9 +41,10 @@ locations:
 
 api:
   base_url: "https://air-quality-api.open-meteo.com/v1/air-quality"
+  weather_url: "https://api.open-meteo.com/v1/forecast"
 
 mongo:
-  db_name: "htpUser"
+  db_name: "bot1"
   raw_collection: "db_raw"
   processed_collection: "db_processed"
   prediction_collection: "db_predictions"
@@ -53,7 +54,7 @@ model:
     path: "models/rf/rf_v1.pkl"
     version: "v1"
   lstm:
-    path: "models/lstm/lstm_v1.h5"
+    path: "models/lstm/lstm_v1.keras"
     version: "v1"
 
 artifacts:

@@ -7,7 +7,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, "../../"))
 sys.path.append(project_root)
 
-from src.common import get_mongo_client, load_config, logger
+from src.common.database import get_mongo_client
+from src.common.utils import load_config, logger
 
 def setup_timeseries_collections():
     logger.info("Connecting to MongoDB Atlas...")

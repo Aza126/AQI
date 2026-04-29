@@ -21,22 +21,25 @@ RAW_COLUMNS = [
     "pm10",
     "nitrogen_dioxide",
     "ozone",
-    "carbon_monoxide"
+    "carbon_monoxide",
+    "temperature_2m",       # Nhiệt độ (cách mặt đất 2m)
+    "relative_humidity_2m", # Độ ẩm tương đối
+    "surface_pressure",     # Áp suất bề mặt
+    "wind_speed_10m"        # Tốc độ gió (cách mặt đất 10m)
 ]
 
 # ========================
 # FEATURE ENGINEERING
 # ========================
-FEATURE_COLUMNS = [
-    "pm2_5",
-    "pm10",
-    "nitrogen_dioxide",
-    "ozone",
-    "carbon_monoxide",
-    "hour_sin",
-    "hour_cos"
-]
+LAG_FEATURES = ["pm25_lag_1h", "pm25_lag_2h", "pm25_lag_3h"]
 
+FEATURE_COLUMNS = [
+    "pm2_5", "pm10", "nitrogen_dioxide", "ozone", "carbon_monoxide",
+    "temperature_2m",        # Thêm vào để mô hình học yếu tố nhiệt độ
+    "relative_humidity_2m",   # Thêm vào vì độ ẩm ảnh hưởng đến AQI
+    "wind_speed_10m",         # Thêm vào vì gió giúp tán bụi
+    "hour_sin", "hour_cos"
+] +  LAG_FEATURES
 # ========================
 # MODEL INPUT
 # ========================
