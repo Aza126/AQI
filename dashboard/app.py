@@ -1,139 +1,114 @@
+# dashboard/app.py
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
-import folium
-from streamlit_folium import st_folium
-from folium.plugins import HeatMap
-from src.common import load_config, get_collection, TIME_COLUMN, META_COLUMN
+from src.common.database import get_collection
+from src.common.utils import load_config
+from src.common.schema import TIME_COLUMN, META_COLUMN, TARGET_COLUMN
 
-st.set_page_config(page_title="AQI Dashboard", layout="wide")
+# 1. Cấu hình trang
+st.set_page_config(page_title="AQI Monitoring & Forecasting", layout="wide")
 
-# Sử dụng cache để không nạp lại config nhiều lần
-@st.cache_resource
-def get_db_collections():
+@st.cache_data(ttl=300)  # Cache dữ liệu 5 phút một lần
+def load_data():
     config = load_config()
-    return get_collection(config, "raw_collection"), get_collection(config, "prediction_collection"), config
+    raw_col = get_collection(config, "raw_collection")
+    pred_col = get_collection(config, "prediction_collection")
 
-def load_city_data(selected_city):
-    raw_col, pred_col, _ = get_db_collections()
+    # Lấy dữ liệu thực tế (72 giờ gần nhất)
+    raw_data = list(raw_col.find().sort(TIME_COLUMN, -1).limit(500))
+    df_raw = pd.DataFrame(raw_data)
     
-    # Tối ưu: Lọc ngay tại MongoDB thay vì load hết về rồi mới lọc bằng Pandas
-    query = {META_COLUMN: selected_city}
+    # Lấy dữ liệu dự báo
+    pred_data = list(pred_col.find().sort(TIME_COLUMN, -1).limit(200))
+    df_pred = pd.DataFrame(pred_data)
     
-    actual_data = list(raw_col.find(query).sort(TIME_COLUMN, -1).limit(100))
-    pred_data = list(pred_col.find(query).sort(TIME_COLUMN, -1).limit(200))
+    return df_raw, df_pred
+
+def main():
+    st.title("🌬️ Hệ Thống Theo Dõi & Dự Báo Chất Lượng Không Khí (PM2.5)")
     
-    return pd.DataFrame(actual_data), pd.DataFrame(pred_data)
+    try:
+        df_raw, df_pred = load_data()
+    except Exception as e:
+        st.error(f"Không thể kết nối dữ liệu: {e}")
+        return
 
-st.title("🌍 AQI Real-time Monitoring & Prediction")
+    if df_raw.empty:
+        st.warning("Chưa có dữ liệu trong Database.")
+        return
 
-raw_col_init, _, config = get_db_collections()
-all_cities = [loc['name'] for loc in config['locations']]
+    # --- SIDEBAR: Chọn địa điểm ---
+    cities = df_raw[META_COLUMN].unique()
+    selected_city = st.sidebar.selectbox("📍 Chọn địa điểm", cities)
 
-# --- Sidebar ---
-st.sidebar.header("Cấu hình bộ lọc")
-selected_city = st.sidebar.selectbox("📍 Chọn thành phố", all_cities)
-num_hours = st.sidebar.slider("Số giờ hiển thị", 12, 168, 48)
+    # Lọc dữ liệu theo thành phố
+    city_raw = df_raw[df_raw[META_COLUMN] == selected_city].sort_values(TIME_COLUMN)
+    city_pred = df_pred[df_pred[META_COLUMN] == selected_city].sort_values(TIME_COLUMN)
 
-# Load dữ liệu
-df_actual, df_pred = load_city_data(selected_city)
-
-if not df_actual.empty:
-    df_actual = df_actual.sort_values(TIME_COLUMN)
-    latest_aqi = df_actual.iloc[-1].get('aqi', df_actual.iloc[-1].get('pm2_5', 0))
+    # --- Kpi Metrics ---
+    latest_aqi = city_raw.iloc[-1]["pm2_5"] # Giả sử lấy pm2.5 thực tế mới nhất
     
-    # --- Row 1: Metrics (Các chỉ số nhanh) ---
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Chỉ số hiện tại", f"{latest_aqi:.1f}")
+        st.metric("PM2.5 Hiện Tại", f"{latest_aqi:.2f} µg/m³")
     with col2:
-        status = "Tốt" if latest_aqi <= 50 else "Trung bình" if latest_aqi <= 100 else "Kém"
-        st.metric("Trạng thái không khí", status)
+        if not city_pred.empty:
+            last_rf = city_pred[city_pred["model_type"] == "rf"].iloc[-1]["predicted_aqi"]
+            st.metric("Dự báo (RF)", f"{last_rf:.1f} AQI")
     with col3:
-        st.metric("Thành phố", selected_city)
+        if not city_pred.empty:
+            last_lstm = city_pred[city_pred["model_type"] == "lstm"].iloc[-1]["predicted_aqi"]
+            st.metric("Dự báo (LSTM)", f"{last_lstm:.1f} AQI")
 
-    # --- Row 2: Chart ---
+    # --- BIỂU ĐỒ CHÍNH ---
+    st.subheader(f"Biểu đồ chỉ số tại {selected_city}")
+    
     fig = go.Figure()
 
-    # 1. Đường thực tế
-    y_col = "aqi" if "aqi" in df_actual.columns else "pm2_5"
+    # Đường dữ liệu thực tế
     fig.add_trace(go.Scatter(
-        x=df_actual[TIME_COLUMN], y=df_actual[y_col],
-        mode='lines+markers', name='Thực tế',
-        line=dict(color='#00d1ff', width=3),
-        marker=dict(size=4)
+        x=city_raw[TIME_COLUMN], 
+        y=city_raw["pm2_5"], 
+        mode='lines+markers',
+        name='Thực tế (PM2.5)',
+        line=dict(color='royalblue', width=2)
     ))
 
-    if not df_pred.empty:
-        # 2. Dự báo từ Random Forest
-        rf_data = df_pred[df_pred["model"] == "rf"].sort_values(TIME_COLUMN)
+    # Đường dự báo RF
+    if not city_pred.empty:
+        rf_df = city_pred[city_pred["model_type"] == "rf"]
         fig.add_trace(go.Scatter(
-            x=rf_data[TIME_COLUMN], y=rf_data["prediction"],
-            mode='markers', name='Dự báo (RF)',
-            marker=dict(color='#ff4b4b', size=8, symbol='diamond')
+            x=rf_df[TIME_COLUMN], 
+            y=rf_df["predicted_aqi"], 
+            mode='markers',
+            name='Dự báo RF',
+            marker=dict(color='orange', size=8, symbol='x')
         ))
 
-        # 3. Dự báo từ LSTM
-        lstm_data = df_pred[df_pred["model"] == "lstm"].sort_values(TIME_COLUMN)
+        # Đường dự báo LSTM
+        lstm_df = city_pred[city_pred["model_type"] == "lstm"]
         fig.add_trace(go.Scatter(
-            x=lstm_data[TIME_COLUMN], y=lstm_data["prediction"],
-            mode='lines', name='Dự báo (LSTM)',
-            line=dict(color='#00ff00', width=2, dash='dot')
+            x=lstm_df[TIME_COLUMN], 
+            y=lstm_df["predicted_aqi"], 
+            mode='markers',
+            name='Dự báo LSTM',
+            marker=dict(color='red', size=8, symbol='diamond')
         ))
 
     fig.update_layout(
-        template="plotly_dark",
-        xaxis_title="Thời gian (UTC)",
-        yaxis_title="Chỉ số (AQI/PM2.5)",
-        hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        xaxis_title="Thời gian",
+        yaxis_title="Giá trị",
+        legend_title="Chú thích",
+        hovermode="x unified"
     )
-
     st.plotly_chart(fig, use_container_width=True)
-    
-    # --- Row 3: Data Table ---
-    with st.expander("Xem bảng dữ liệu chi tiết"):
-        st.dataframe(df_actual.tail(10), use_container_width=True)
-else:
-    st.warning(f"Chưa có dữ liệu cho {selected_city}. Vui lòng chạy ingestion.py trước.")
 
-# Heatmap
-st.subheader("📍 Mạng lưới quan trắc & Mật độ ô nhiễm")
+    # --- BẢNG DỮ LIỆU ---
+    if st.checkbox("Hiển thị bảng dữ liệu chi tiết"):
+        st.write("Dữ liệu dự báo gần nhất:")
+        st.dataframe(city_pred.tail(10))
 
-# 1. Lấy dữ liệu thực tế mới nhất của tất cả thành phố để làm Heatmap
-heat_data = []
-for loc in config['locations']:
-    # Lấy dữ liệu gần nhất của thành phố này từ df_actual (nếu có) 
-    # hoặc query nhanh từ DB
-    city_df = df_actual[df_actual[META_COLUMN] == loc['name']]
-    if not city_df.empty:
-        val = city_df.iloc[-1].get('pm2_5', 0)
-        # Format: [lat, lon, weight]
-        heat_data.append([loc['lat'], loc['lon'], float(val)])
-
-m = folium.Map(location=[16.0, 108.0], zoom_start=5)
-
-# 2. Thêm lớp HeatMap
-if heat_data:
-    HeatMap(
-        heat_data,
-        name="Mật độ ô nhiễm",
-        min_opacity=0.3,     # Độ mờ tối thiểu
-        max_val=max([x[2] for x in heat_data]) if heat_data else 100, # Tỉ lệ màu dựa trên AQI cao nhất
-        radius=25,           # Bán kính điểm nhiệt (pixel)
-        blur=15,             # Độ nhòe để các điểm hòa vào nhau
-        scale_radius=False   # ĐỂ FALSE: điểm nhiệt giữ nguyên size pixel khi zoom (dễ nhìn)
-                             # ĐỂ TRUE: điểm nhiệt sẽ to ra/nhỏ lại theo tỉ lệ km trên bản đồ
-    ).add_to(m)
-
-# 3. Vẫn vẽ Marker để người dùng bấm vào xem tên
-for loc in config['locations']:
-    folium.CircleMarker(
-        [loc['lat'], loc['lon']],
-        radius=5,
-        popup=loc['name'],
-        color='blue',
-        fill=True
-    ).add_to(m)
-
-st_folium(m, width=1300, height=450)
+if __name__ == "__main__":
+    main()
