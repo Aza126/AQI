@@ -1,75 +1,103 @@
 # src/inference.py
-import numpy as np
 import os
-# Lệnh này giúp tắt bớt các cảnh báo xám vô hại của TensorFlow cho Terminal gọn gàng
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
 from src.common.utils import load_config, load_pickle, logger
 from src.common.database import get_collection
-from src.common.schema import TIME_COLUMN, META_COLUMN
+from src.common.schema import TIME_COLUMN, META_COLUMN, MODEL_INPUT_COLUMNS
 from src.preprocess import run_preprocess
 
-def load_models(config):
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+def load_all_models(config):
     models = {}
     run_models = config["inference"]["run_models"]
 
+    for m_type in run_models:
+        path = config["model"][m_type]["path"]
+        if not os.path.exists(path):
+            logger.error(f"❌ Không tìm thấy file model tại {path}. Hãy chạy train_{m_type}.py trước!")
+            continue
+
     if "rf" in run_models:
-        rf_path = config["model"]["rf"]["path"]
-        models["rf"] = load_pickle(rf_path)
-        logger.info("Loaded Random Forest model")
+        models["rf"] = load_pickle(config["model"]["rf"]["path"])
+        logger.info("🌲 Loaded Random Forest model")
 
     if "lstm" in run_models:
-        lstm_path = config["model"]["lstm"]["path"]
-        # Thêm custom_objects để fix lỗi deserialize
-        models["lstm"] = load_model(lstm_path, custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
-        logger.info("Loaded LSTM model")
+        models["lstm"] = load_model(config["model"]["lstm"]["path"])
+        logger.info("🧠 Loaded LSTM model")
 
     return models
 
-def reshape_for_lstm(X):
-    return np.expand_dims(X, axis=1)
-
 def run_inference():
-    logger.info("Starting inference...")
+    logger.info("🔮 Bắt đầu quy trình dự báo AQI...")
     config = load_config()
-    pred_col = get_collection(config, "prediction_collection")
+    processed_col = get_collection(config, "processed_collection")
 
-    X_scaled, df_processed = run_preprocess()
-
-    if X_scaled is None or len(X_scaled) == 0:
-        logger.warning("No data for inference")
+    # Tìm mốc dự báo mới nhất của từng model trong DB để tránh trùng
+    # Thay vì gọi run_preprocess(), ta lấy trực tiếp dữ liệu đã xử lý từ DB
+    # Lấy dữ liệu của 24 giờ gần nhất cho tất cả các thành phố
+    data = list(processed_col.find().sort(TIME_COLUMN, -1).limit(500)) 
+    
+    if not data:
+        logger.error("❌ Không có dữ liệu trong db_processed để dự báo.")
         return
 
-    models = load_models(config)
+    df_processed = pd.DataFrame(data)
+    # Vì ta lấy sort -1 (mới nhất lên đầu), nên cần sort lại cho đúng trình tự thời gian
+    df_processed = df_processed.sort_values([META_COLUMN, TIME_COLUMN])
+
+    models = load_all_models(config)
     results = []
 
-    for model_name, model in models.items():
-        logger.info(f"Running model: {model_name}")
-
-        if model_name == "rf":
-            preds = model.predict(X_scaled)
-        elif model_name == "lstm":
-            X_lstm = reshape_for_lstm(X_scaled)
-            preds = model.predict(X_lstm).flatten()
-        else:
+    for city in df_processed[META_COLUMN].unique():
+        city_df = df_processed[df_processed[META_COLUMN] == city].sort_values(TIME_COLUMN)
+        
+        if len(city_df) < 24:
+            logger.warning(f"⚠️ {city} thiếu dữ liệu chuỗi. Bỏ qua.")
             continue
 
-        for i, pred in enumerate(preds):
-            record = {
-                TIME_COLUMN: df_processed.iloc[i][TIME_COLUMN].to_pydatetime(),
-                META_COLUMN: df_processed.iloc[i][META_COLUMN],
-                "model": model_name,
-                "prediction": float(pred)
-            }
-            results.append(record)
+        latest_row = city_df.tail(1)
+        # Sửa lỗi lấy timestamp
+        dt_now = latest_row[TIME_COLUMN].iloc[0]
+        if hasattr(dt_now, 'to_pydatetime'):
+            dt_now = dt_now.to_pydatetime()
+
+        # --- Random Forest ---
+        if "rf" in models:
+            X_rf = latest_row[MODEL_INPUT_COLUMNS].values
+            rf_pred = models["rf"].predict(X_rf)[0]
+            
+            results.append({
+                TIME_COLUMN: dt_now,
+                META_COLUMN: city,
+                "model_type": "rf",
+                "predicted_aqi": round(float(rf_pred), 2),
+                "created_at": pd.Timestamp.now().to_pydatetime()
+            })
+
+        # --- LSTM ---
+        if "lstm" in models:
+            X_lstm_seq = city_df.tail(24)[MODEL_INPUT_COLUMNS].values # .astype(np.float32)
+            X_lstm_seq = np.expand_dims(X_lstm_seq, axis=0)           # Kết quả phải là shape (1, 24, n_features)
+            
+            lstm_pred = models["lstm"].predict(X_lstm_seq, verbose=0)[0][0]
+            
+            results.append({
+                TIME_COLUMN: dt_now,
+                META_COLUMN: city,
+                "model_type": "lstm",
+                "predicted_aqi": round(float(lstm_pred), 2),
+                "created_at": pd.Timestamp.now().to_pydatetime()
+            })
 
     if results:
-        pred_col.insert_many(results)
-        logger.info(f"Inserted {len(results)} predictions")
-
-    logger.info("Inference done.")
+        collection = get_collection(config, "prediction_collection")
+        collection.insert_many(results)
+        logger.info(f"✅ Đã lưu {len(results)} kết quả dự báo.")
 
 if __name__ == "__main__":
     run_inference()
