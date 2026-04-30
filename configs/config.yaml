@@ -44,7 +44,7 @@ api:
   weather_url: "https://api.open-meteo.com/v1/forecast"
 
 mongo:
-  db_name: "bot1"
+  db_name: "user"
   raw_collection: "db_raw"
   processed_collection: "db_processed"
   prediction_collection: "db_predictions"
