@@ -38,6 +38,8 @@ pip install -r requirements.txt
 ###### B5: Download needed files
 ```bash
 python -m src.scripts.download_models
+# if errors occur
+python -m src.scripts.prepare_training_data
 ```
 ###### B6: Train your models
 ```bash
