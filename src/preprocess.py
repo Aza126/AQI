@@ -1,7 +1,6 @@
 # src/preprocess.py
 import pandas as pd
 import numpy as np
-
 from src.common.utils import load_config, load_pickle, logger
 from src.common.database import get_collection
 from src.common.schema import (
@@ -9,50 +8,78 @@ from src.common.schema import (
     validate_columns,
     TIME_COLUMN,
     META_COLUMN,
-    RAW_COLUMNS
+    RAW_COLUMNS,
+    LAG_FEATURES
 )
 
 def add_time_features(df: pd.DataFrame):
-    # Đảm bảo cột timestamp là datetime
+    """Tạo đặc trưng tuần hoàn thời gian."""
     df[TIME_COLUMN] = pd.to_datetime(df[TIME_COLUMN])
-    df["hour"] = df[TIME_COLUMN].dt.hour
-    df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
-    df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
+    hour = df[TIME_COLUMN].dt.hour
+    df["hour_sin"] = np.sin(2 * np.pi * hour / 24)
+    df["hour_cos"] = np.cos(2 * np.pi * hour / 24)
+    return df
+
+def add_lag_features(df: pd.DataFrame):
+    """Tạo 3 cột trễ (1h, 2h, 3h) theo từng thành phố."""
+    df = df.sort_values(by=[META_COLUMN, TIME_COLUMN])
+    for i in range(1, 4):
+        col_name = f"pm25_lag_{i}h"
+        # Shift dữ liệu trong nhóm thành phố để tránh tràn dữ liệu giữa các tỉnh
+        df[col_name] = df.groupby(META_COLUMN)["pm2_5"].shift(i)
     return df
 
 def preprocess_df(df: pd.DataFrame, scaler):
+    """Quy trình tiền xử lý chuẩn hóa."""
     df = df.copy()
+    
+    # 1. Nội suy dữ liệu thiếu (Xử lý các ô trống cảm biến)
+    # Thay vì: df[RAW_COLUMNS] = df[RAW_COLUMNS].interpolate(...)
+    # Hãy áp dụng nội suy theo từng thành phố để tránh ảnh hưởng chéo giữa các tỉnh:
+    df[RAW_COLUMNS] = df.groupby(META_COLUMN)[RAW_COLUMNS].transform(
+        lambda x: x.interpolate(method='linear', limit_direction='both')
+    )
+    
+    # 2. Tạo đặc trưng mới (Time + Lag)
     df = add_time_features(df)
-    # Thay vì chỉ: df = df.dropna(subset=MODEL_INPUT_COLUMNS)
-    # Hãy thêm dòng nội suy vào trước đó:
-    df[RAW_COLUMNS] = df[RAW_COLUMNS].interpolate(method='linear', limit_direction='both')
-    df = df.dropna(subset=MODEL_INPUT_COLUMNS) # Chỉ drop những dòng ở rìa không thể nội suy
-
+    df = add_lag_features(df)
+    
+    # 3. Loại bỏ NaN (do lag tạo ra) và lọc cột
+    df = df.dropna(subset=MODEL_INPUT_COLUMNS)
+    
     X = df[MODEL_INPUT_COLUMNS]
+    # Kiểm tra xem có khớp với MODEL_INPUT_COLUMNS trong schema không
     validate_columns(X)
+    
+    # 4. Chuẩn hóa bằng Scaler đã load
     X_scaled = scaler.transform(X)
     
     return X_scaled, df
 
 def run_preprocess():
-    logger.info("Starting preprocessing...")
+    """Hàm chạy để đẩy dữ liệu đã xử lý lên MongoDB (Processed Collection)."""
+    logger.info("⚡ Đang thực hiện tiền xử lý dữ liệu...")
     config = load_config()
-
     raw_col = get_collection(config, "raw_collection")
     processed_col = get_collection(config, "processed_collection")
     scaler = load_pickle(config["artifacts"]["scaler_path"])
 
-    # Truy vấn dữ liệu thô (Có thể thêm query thời gian ở đây để không query lại toàn bộ DB)
-    data = list(raw_col.find())
-
+    # Tìm mốc thời gian cuối cùng đã xử lý
+    latest_record = processed_col.find_one(sort=[(TIME_COLUMN, -1)])
+    query = {}
+    if latest_record:
+        # Chỉ lấy dữ liệu thô mới hơn mốc đã xử lý
+        query = {TIME_COLUMN: {"$gt": latest_record[TIME_COLUMN]}}
+    
+    data = list(raw_col.find(query, {"_id": 0}))
     if not data:
-        logger.warning("No raw data found")
+        logger.info("ℹ️ Không có dữ liệu thô mới để xử lý.")
         return None, None
 
     df = pd.DataFrame(data)
     X_scaled, df_processed = preprocess_df(df, scaler)
 
-    # Đẩy dữ liệu processed lên Atlas
+    # Chuyển đổi để lưu lên Atlas
     processed_records = []
     for i in range(len(df_processed)):
         row = df_processed.iloc[i]
@@ -60,20 +87,14 @@ def run_preprocess():
             TIME_COLUMN: row[TIME_COLUMN].to_pydatetime(),
             META_COLUMN: row[META_COLUMN]
         }
-        # Thêm các cột feature đã được scale
+        # Lưu các giá trị đã scale
         for j, col in enumerate(MODEL_INPUT_COLUMNS):
             record[col] = float(X_scaled[i][j])
-            
         processed_records.append(record)
-
-    processed_col = get_collection(config, "processed_collection")
-    # CHIẾN THUẬT: Xóa dữ liệu cũ trước khi chèn mới để tránh trùng lặp
-    # Hoặc tốt hơn: Chỉ lấy dữ liệu chưa được xử lý (nhưng đơn giản nhất là xóa cũ)
-    processed_col.delete_many({}) 
 
     if processed_records:
         processed_col.insert_many(processed_records)
-        logger.info(f"Inserted {len(processed_records)} processed records.")
+        logger.info(f"✅ Đã xử lý và lưu {len(processed_records)} bản ghi.")
 
     return X_scaled, df_processed
 
