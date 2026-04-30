@@ -2,38 +2,12 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from src.common.utils import load_config, save_pickle, logger
+from src.common.utils import load_config, save_pickle, logger, calculate_aqi_pm25
 from src.common.database import get_collection
 from src.common.schema import (
     MODEL_INPUT_COLUMNS, TIME_COLUMN, RAW_COLUMNS, 
     META_COLUMN, TARGET_COLUMN, LAG_FEATURES
 )
-
-def calculate_aqi_pm25(pm25):
-    """
-    Tính AQI cho PM2.5 theo chuẩn EPA 2024.
-    Sử dụng phương pháp nội suy tuyến tính.
-    """
-    # Danh sách điểm dừng: (C_low, C_high, I_low, I_high)
-    breakpoints = [
-        (0.0, 9.0, 0, 50),
-        (9.1, 35.4, 51, 100),
-        (35.5, 55.4, 101, 150),
-        (55.5, 125.4, 151, 200),
-        (125.5, 225.4, 201, 300),
-        (225.5, 325.4, 301, 500)
-    ]
-    
-    # Xử lý các trường hợp biên
-    if pm25 < 0: return 0
-    if pm25 > 325.4: return 501
-    
-    for low_c, high_c, low_i, high_i in breakpoints:
-        if low_c <= pm25 <= high_c:
-            aqi = ((high_i - low_i) / (high_c - low_c)) * (pm25 - low_c) + low_i
-            return int(round(aqi)) # Làm tròn về số nguyên theo quy định EPA
-            
-    return 0
 
 def add_advanced_features(df: pd.DataFrame):
     df[TIME_COLUMN] = pd.to_datetime(df[TIME_COLUMN])
