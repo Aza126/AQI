@@ -26,8 +26,8 @@
 
 # MODEL TRAINING 
 # ========================
-/src/training/rf.py            @ThanhIsHere
-/src/training/lstm.py          @Alepth64
+/src/training/rf.py            @Aza126
+/src/training/lstm.py          @Aza126
 
 # DASHBOARD
 # ========================
