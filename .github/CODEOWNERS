@@ -15,6 +15,7 @@
 /src/common/database.py        @Aza126
 /src/common/utils.py           @Aza126
 
+/src/scripts/database.py               @Aza126
 /src/scripts/prepare_training_data.py  @Aza126
 /src/scripts/download_models.py        @Aza126
 
@@ -23,9 +24,10 @@
 /src/inference.py              @Aza126
 
 
-# MODEL TRAINING
+# MODEL TRAINING 
 # ========================
-/src/training/                 @Alepth64 @ThanhIsHere
+/src/training/rf.py            @ThanhIsHere
+/src/training/lstm.py          @Alepth64
 
 # DASHBOARD
 # ========================
@@ -33,14 +35,14 @@
 
 # CONFIG 
 # ========================
-/configs/                      
+/configs/                      @Aza126
 /requirements.txt              @Aza126
 /.gitignore                    @Aza126
 /.env.example                  @Aza126
 
 # NO OWNER (auto / generated)
 # ========================
-# data/, artifacts/, models weights download → handled outside git
+# artifacts/, models weights download → handled outside git
 
 # OPEN FILE
 # ========================
