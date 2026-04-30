@@ -43,7 +43,7 @@ python -m src.scripts.download_models
 ```bash
 # Write and run your `rf.py` and `lstm.py`
 # using data from `scaler.pkl` and `training_data_scaled.parquet`
-# to create models `rf_v1.pkl` and `lstm_v1.h5`
+# to create models `rf_v1.pkl` and `lstm_v1.keras`
 ```
 ###### B7: Push your code to remote repo using other branches
 ```bash
@@ -59,13 +59,12 @@ git add src/training/lstm.py
 git commit -m "Update lstm.py"
 git push -u origin feature/lstm
 ```
-###### B8: Save your `rf.pkl` and `lstm.h5` to Google Drive
+###### B8: Save your `rf.pkl` and `lstm.keras` to Google Drive
 ```bash
-# Replace the old empty ones
+# Replace the old ones
 ```
-###### If you wanna run dashboard
+###### How to run dashboard
 ```bash
-python -m src.inference
 python -m streamlit run dashboard/app.py
 # How to stop
 Ctrl + C 
