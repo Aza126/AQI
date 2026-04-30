@@ -53,3 +53,29 @@ def load_pickle(path: str):
     if not os.path.exists(path):
         raise FileNotFoundError(f"File not found: {path}")
     return joblib.load(path)
+
+def calculate_aqi_pm25(pm25):
+    """
+    Tính AQI cho PM2.5 theo chuẩn EPA 2024.
+    Sử dụng phương pháp nội suy tuyến tính.
+    """
+    # Danh sách điểm dừng: (C_low, C_high, I_low, I_high)
+    breakpoints = [
+        (0.0, 9.0, 0, 50),
+        (9.1, 35.4, 51, 100),
+        (35.5, 55.4, 101, 150),
+        (55.5, 125.4, 151, 200),
+        (125.5, 225.4, 201, 300),
+        (225.5, 325.4, 301, 500)
+    ]
+    
+    # Xử lý các trường hợp biên
+    if pm25 < 0: return 0
+    if pm25 > 325.4: return 501
+    
+    for low_c, high_c, low_i, high_i in breakpoints:
+        if low_c <= pm25 <= high_c:
+            aqi = ((high_i - low_i) / (high_c - low_c)) * (pm25 - low_c) + low_i
+            return int(round(aqi)) # Làm tròn về số nguyên theo quy định EPA
+            
+    return 0
