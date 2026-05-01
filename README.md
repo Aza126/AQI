@@ -6,7 +6,9 @@ Air Quality Index Dashboard - for an assignment
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Deep_Learning-orange.svg)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Automated-success.svg)
 
-##### Steps for training models
+
+
+#### How to just run dashboard ####
 
 ###### B1: Clone and create virtual environment
 ```bash
@@ -14,7 +16,6 @@ git clone git@github:Aza126/AQI.git
 # 'yes', spam 'Enter'
 cd AQI
 python -m venv .venv
-mkdir -p artifacts models/rf models/lstm
 ```
 ###### B2: Activate virtual environment
 ```bash
@@ -35,35 +36,35 @@ copy .env.example .env
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-###### B5: Download needed files
+###### Run dashboard
 ```bash
-python -m src.scripts.download_models
+python -m streamlit run dashboard/app.py
+# How to stop
+Ctrl + C 
 ```
-###### B6: Train your models
-```bash
-# Write and run your `rf.py` and `lstm.py`
-# using data from `scaler.pkl` and `training_data_scaled.parquet`
-# to create models `rf_v1.pkl` and `lstm_v1.keras`
-```
-###### B7: Push your code to remote repo using other branches
-```bash
-git branch feature/rf feature/lstm
 
-git switch feature/rf
-git add src/training/rf.py
-git commit -m "Update rf.py"
-git push -u origin feature/rf
+#### How to explore codes yourself, add these steps ####
 
-git switch feature/lstm
-git add src/training/lstm.py
-git commit -m "Update lstm.py"
-git push -u origin feature/lstm
-```
-###### B8: Save your `rf.pkl` and `lstm.keras` to Google Drive
+###### B1: Create paths
 ```bash
-# Replace the old ones
+mkdir -p artifacts models/rf models/lstm
 ```
-###### How to run dashboard
+###### B2: Create your DB
+```bash
+# Create your own MongoDB Atlas DB
+# Change db_name in `config.yaml` & MONGO_URI in `.env`
+```
+###### B3: Run
+```bash
+python -m src.scripts.setup_mongodb
+python -m src.ingestion
+python -m src.scripts.prepare_training_data
+python -m src.training.rf
+python -m src.training.lstm
+python -m src.preprocess
+python -m src.inference
+```
+###### Run dashboard
 ```bash
 python -m streamlit run dashboard/app.py
 # How to stop
