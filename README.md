@@ -6,7 +6,7 @@ Air Quality Index Dashboard - for an assignment
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Deep_Learning-orange.svg)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Automated-success.svg)
 
-##### Steps for training models
+##### How to explore codes yourself
 
 ###### B1: Clone and create virtual environment
 ```bash
@@ -39,31 +39,55 @@ pip install -r requirements.txt
 ```bash
 python -m src.scripts.download_models
 ```
-###### B6: Train your models
+###### B6: Change db_name in `config.yaml` & MONGO_URI in `.env`
 ```bash
-# Write and run your `rf.py` and `lstm.py`
-# using data from `scaler.pkl` and `training_data_scaled.parquet`
-# to create models `rf_v1.pkl` and `lstm_v1.keras`
+# Create your own MongoDB Atlas DB
+# Change db_name in `config.yaml` & MONGO_URI in `.env`
 ```
-###### B7: Push your code to remote repo using other branches
+###### B7: Run
 ```bash
-git branch feature/rf feature/lstm
-
-git switch feature/rf
-git add src/training/rf.py
-git commit -m "Update rf.py"
-git push -u origin feature/rf
-
-git switch feature/lstm
-git add src/training/lstm.py
-git commit -m "Update lstm.py"
-git push -u origin feature/lstm
+python -m src.scripts.setup_mongodb
+python -m src.ingestion
+python -m src.scripts.prepare_training_data
+python -m src.training.rf
+python -m src.training.lstm
+python -m src.preprocess
+python -m src.inference
 ```
-###### B8: Save your `rf.pkl` and `lstm.keras` to Google Drive
+###### Run dashboard
 ```bash
-# Replace the old ones
+python -m streamlit run dashboard/app.py
+# How to stop
+Ctrl + C 
 ```
-###### How to run dashboard
+##### How to just run dashboard
+###### B1: Clone and create virtual environment
+```bash
+git clone git@github:Aza126/AQI.git
+# 'yes', spam 'Enter'
+cd AQI
+python -m venv .venv
+```
+###### B2: Activate virtual environment
+```bash
+# Linux/MacOS
+source .venv/bin/activate
+# Windows
+.venv/Scripts/activate
+```
+###### B3: Create .env -> ask Aza for the words needed
+```bash
+cp .env.example .env
+# or
+copy .env.example .env
+# replace some words in .env
+```
+###### B4: Download needed librabies
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+###### Run dashboard
 ```bash
 python -m streamlit run dashboard/app.py
 # How to stop
