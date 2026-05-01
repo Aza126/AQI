@@ -6,7 +6,44 @@ Air Quality Index Dashboard - for an assignment
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-Deep_Learning-orange.svg)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Automated-success.svg)
 
-##### How to explore codes yourself
+
+
+#### How to just run dashboard ####
+
+###### B1: Clone and create virtual environment
+```bash
+git clone git@github:Aza126/AQI.git
+# 'yes', spam 'Enter'
+cd AQI
+python -m venv .venv
+```
+###### B2: Activate virtual environment
+```bash
+# Linux/MacOS
+source .venv/bin/activate
+# Windows
+.venv/Scripts/activate
+```
+###### B3: Create .env -> ask Aza for the words needed
+```bash
+cp .env.example .env
+# or
+copy .env.example .env
+# replace some words in .env
+```
+###### B4: Download needed librabies
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+###### Run dashboard
+```bash
+python -m streamlit run dashboard/app.py
+# How to stop
+Ctrl + C 
+```
+
+#### How to explore codes yourself ####
 
 ###### B1: Clone and create virtual environment
 ```bash
@@ -53,39 +90,6 @@ python -m src.training.rf
 python -m src.training.lstm
 python -m src.preprocess
 python -m src.inference
-```
-###### Run dashboard
-```bash
-python -m streamlit run dashboard/app.py
-# How to stop
-Ctrl + C 
-```
-##### How to just run dashboard
-###### B1: Clone and create virtual environment
-```bash
-git clone git@github:Aza126/AQI.git
-# 'yes', spam 'Enter'
-cd AQI
-python -m venv .venv
-```
-###### B2: Activate virtual environment
-```bash
-# Linux/MacOS
-source .venv/bin/activate
-# Windows
-.venv/Scripts/activate
-```
-###### B3: Create .env -> ask Aza for the words needed
-```bash
-cp .env.example .env
-# or
-copy .env.example .env
-# replace some words in .env
-```
-###### B4: Download needed librabies
-```bash
-pip install --upgrade pip
-pip install -r requirements.txt
 ```
 ###### Run dashboard
 ```bash
