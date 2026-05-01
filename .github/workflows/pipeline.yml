@@ -26,12 +26,12 @@ jobs:
     - name: Collect Data
       env:
         MONGO_URI: ${{ secrets.MONGO_URI }}
-      run: python src/ingestion.py
+      run: python -m src.ingestion
 
     - name: Preprocess Data
       env:
         MONGO_URI: ${{ secrets.MONGO_URI }}
-      run: python src/preprocessing.py
+      run: python -m src.preprocessing
 
     - name: Download Models
       env:
@@ -40,12 +40,12 @@ jobs:
         DRIVE_ID_TRAINING_DATA: ${{ secrets.DRIVE_ID_TRAINING_DATA }}
         DRIVE_ID_RF: ${{ secrets.DRIVE_ID_RF }}
         DRIVE_ID_LSTM: ${{ secrets.DRIVE_ID_LSTM }}
-      run: python src/download_model.py
+      run: python -m src.scripts.download_model
 
     - name: Inference
       env:
         MONGO_URI: ${{ secrets.MONGO_URI }}
-      run: python src/inference.py
+      run: python -m src.inference
 
     - name: Notify Status
       if: always()
