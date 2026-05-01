@@ -8,7 +8,7 @@ Air Quality Index Dashboard - for an assignment
 
 
 
-#### How to just run dashboard ####
+#### How to just run dashboard and download models ####
 
 ###### B1: Clone and create virtual environment
 ```bash
@@ -42,19 +42,21 @@ python -m streamlit run dashboard/app.py
 # How to stop
 Ctrl + C 
 ```
+##### Download models
+```bash
+mkdir -p artifacts models/rf models/lstm
+python -m src.scripts.download_models
+```
+
 
 #### How to explore codes yourself, add these steps ####
 
-###### B1: Create paths
-```bash
-mkdir -p artifacts models/rf models/lstm
-```
-###### B2: Create your DB
+###### B1: Create your DB
 ```bash
 # Create your own MongoDB Atlas DB
 # Change db_name in `config.yaml` & MONGO_URI in `.env`
 ```
-###### B3: Run
+###### B2: Run
 ```bash
 python -m src.scripts.setup_mongodb
 python -m src.ingestion
