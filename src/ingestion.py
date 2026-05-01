@@ -2,7 +2,6 @@
 import requests
 import pandas as pd
 from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
 import time
 
 from src.common.utils import load_config, logger
@@ -24,7 +23,7 @@ def fetch_air_quality(lat: float, lon: float, config):
     aqi_params = common_params.copy()
     aqi_params["hourly"] = "pm2_5,pm10,nitrogen_dioxide,ozone,carbon_monoxide"
     
-    aqi_response = requests.get(base_url, params=aqi_params)
+    aqi_response = requests.get(base_url, params=aqi_params, timeout=20)
     aqi_response.raise_for_status()
     aqi_data = aqi_response.json()
 
@@ -32,7 +31,7 @@ def fetch_air_quality(lat: float, lon: float, config):
     weather_params = common_params.copy()
     weather_params["hourly"] = "temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m"
     
-    weather_response = requests.get(weather_url, params=weather_params)
+    weather_response = requests.get(weather_url, params=weather_params, timeout=20)
     weather_response.raise_for_status()
     weather_data = weather_response.json()
 
@@ -51,7 +50,7 @@ def transform_raw(data: dict, city_name: str):
 
     for i, t in enumerate(times):
         # Lưu vào MongoDB dưới dạng object datetime (UTC)
-        dt_obj = datetime.fromisoformat(t).replace(tzinfo=ZoneInfo("UTC"))
+        dt_obj = datetime.fromisoformat(t).replace(tzinfo=timezone.utc)
         
         record = {
             TIME_COLUMN: dt_obj,
@@ -80,25 +79,25 @@ def run_ingestion():
             data = fetch_air_quality(loc["lat"], loc["lon"], config)
             records = transform_raw(data, loc["name"])
             all_records.extend(records)
-            time.sleep(2) # Thêm delay để tránh bị rate limit
         except Exception as e:
             logger.error(f"Failed to fetch {loc['name']}: {e}")
             time.sleep(5) # Nếu lỗi, đợi lâu hơn trước khi thử tiếp
+        time.sleep(2) # Thêm delay để tránh bị rate limit
 
     if all_records:
         # 1. Tìm mốc thời gian mới nhất hiện có trong DB
         # Giả sử trường thời gian là 'timestamp'
-        latest_record = collection.find_one(sort=[("timestamp", -1)])
+        latest_record = collection.find_one(sort=[(TIME_COLUMN, -1)])
         
         if latest_record:
-            latest_time = latest_record["timestamp"]
+            latest_time = latest_record[TIME_COLUMN]
 
             # Kiểm tra nếu latest_time từ DB đã có múi giờ (aware) 
             # thì đảm bảo dữ liệu mới cũng phải có múi giờ để so sánh
             new_records = []
             for r in all_records:
                 # Ép kiểu timestamp của record mới sang UTC nếu nó chưa có múi giờ
-                r_time = r["timestamp"]
+                r_time = r[TIME_COLUMN]
                 if r_time.tzinfo is None:
                     r_time = r_time.replace(tzinfo=timezone.utc)
                 
