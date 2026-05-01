@@ -8,7 +8,7 @@ Air Quality Index Dashboard - for an assignment
 
 
 
-#### How to just run dashboard ####
+#### How to just run dashboard and download models ####
 
 ###### B1: Clone and create virtual environment
 ```bash
@@ -42,6 +42,11 @@ python -m streamlit run dashboard/app.py
 # How to stop
 Ctrl + C 
 ```
+##### Download models
+```bash
+python -m src.scripts.download_models
+```
+
 
 #### How to explore codes yourself, add these steps ####
 
