@@ -1,27 +1,22 @@
-# requirements.txt
-# --- Core & API ---
+# Core
 requests==2.31.0
 python-dotenv==1.0.1
 PyYAML==6.0.1
 pymongo==4.6.2
 gdown==5.1.0
 
-# --- Data Science & ML ---
-# Lưu ý: numpy < 2.0 để tránh lỗi tương thích với các bản TensorFlow hiện tại
-numpy>=1.23.5,<2.0.0
-pandas==2.2.1
-# Scikit-learn bản ổn định nhất hiện tại là 1.4.x hoặc 1.5.x
-scikit-learn==1.4.2
-# TensorFlow 2.15+ đã tích hợp sẵn Keras 3, rất ổn định
-tensorflow>=2.16.1
-joblib==1.3.2
-
-# --- Visualization & Dashboard ---
-streamlit==1.32.0
-streamlit-folium==0.18.0
-folium==0.16.0
-plotly==5.19.0
-matplotlib==3.8.3
-seaborn==0.13.2
-# Thêm pyarrow để đọc file .parquet nhanh hơn
+# Data Science (Bỏ phiên bản cụ thể để pip tự chọn bản .whl nhanh nhất)
+numpy
+pandas
+scikit-learn
+tensorflow-cpu  # Dùng bản CPU để cài đặt nhanh hơn gấp 5 lần
+joblib
 pyarrow
+
+# Dashboard
+streamlit
+streamlit-folium
+folium
+plotly
+matplotlib
+seaborn
