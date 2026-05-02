@@ -23,11 +23,25 @@ def load_data():
     # Lấy dữ liệu dự báo
     pred_data = list(pred_col.find().sort(TIME_COLUMN, -1).limit(200))
     df_pred = pd.DataFrame(pred_data)
+
+    # CHUYỂN ĐỔI MÚI GIỜ SANG GIỜ VIỆT NAM (UTC+7)
+    if not df_raw.empty:
+        df_raw[TIME_COLUMN] = pd.to_datetime(df_raw[TIME_COLUMN])
+        # Nếu chưa có múi giờ (naive) thì gán UTC, sau đó đổi sang múi giờ VN
+        if df_raw[TIME_COLUMN].dt.tz is None:
+            df_raw[TIME_COLUMN] = df_raw[TIME_COLUMN].dt.tz_localize('UTC')
+        df_raw[TIME_COLUMN] = df_raw[TIME_COLUMN].dt.tz_convert('Asia/Ho_Chi_Minh')
+
+    if not df_pred.empty:
+        df_pred[TIME_COLUMN] = pd.to_datetime(df_pred[TIME_COLUMN])
+        if df_pred[TIME_COLUMN].dt.tz is None:
+            df_pred[TIME_COLUMN] = df_pred[TIME_COLUMN].dt.tz_localize('UTC')
+        df_pred[TIME_COLUMN] = df_pred[TIME_COLUMN].dt.tz_convert('Asia/Ho_Chi_Minh')
     
     return df_raw, df_pred
 
 def main():
-    st.title("🌬️ Hệ Thống Theo Dõi & Dự Báo Chất Lượng Không Khí (PM2.5)")
+    st.title("Hệ Thống Theo Dõi & Dự Báo Chất Lượng Không Khí")
     
     try:
         df_raw, df_pred = load_data()
@@ -41,26 +55,26 @@ def main():
 
     # --- SIDEBAR: Chọn địa điểm ---
     cities = df_raw[META_COLUMN].unique()
-    selected_city = st.sidebar.selectbox("📍 Chọn địa điểm", cities)
+    selected_city = st.sidebar.selectbox("Chọn địa điểm", cities)
 
     # Lọc dữ liệu theo thành phố
     city_raw = df_raw[df_raw[META_COLUMN] == selected_city].sort_values(TIME_COLUMN)
     city_pred = df_pred[df_pred[META_COLUMN] == selected_city].sort_values(TIME_COLUMN)
 
     # --- Kpi Metrics ---
-    latest_aqi = city_raw.iloc[-1]["pm2_5"] # Giả sử lấy pm2.5 thực tế mới nhất
+    latest_aqi = calculate_aqi_pm25(city_raw.iloc[-1]["pm2_5"]) # Giả sử lấy pm2.5 thực tế mới nhất
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("PM2.5 Hiện Tại", f"{latest_aqi:.2f} µg/m³")
+        st.metric("AQI Thực tế", f"{latest_aqi:.1f}")
     with col2:
         if not city_pred.empty:
             last_rf = city_pred[city_pred["model_type"] == "rf"].iloc[-1]["predicted_aqi"]
-            st.metric("Dự báo (RF)", f"{last_rf:.1f} AQI")
+            st.metric("Dự báo - RF", f"{last_rf:.1f}")
     with col3:
         if not city_pred.empty:
             last_lstm = city_pred[city_pred["model_type"] == "lstm"].iloc[-1]["predicted_aqi"]
-            st.metric("Dự báo (LSTM)", f"{last_lstm:.1f} AQI")
+            st.metric("Dự báo - LSTM", f"{last_lstm:.1f}")
 
     # --- BIỂU ĐỒ CHÍNH ---
     st.subheader(f"Biểu đồ chỉ số tại {selected_city}")
@@ -111,27 +125,50 @@ def main():
         st.write("Dữ liệu dự báo gần nhất:")
         st.dataframe(city_pred.tail(10))
 
-    st.subheader("🔥 Bản đồ nhiệt AQI theo thời gian (Tất cả địa điểm)")
+    st.subheader("Bản đồ nhiệt AQI")
 
     # Chuẩn bị dữ liệu cho Heatmap (Lấy top 100 bản ghi mới nhất)
     df_heatmap = df_raw.copy()
+
+
+
     df_heatmap["aqi"] = df_heatmap["pm2_5"].apply(calculate_aqi_pm25)
 
     # Tạo bảng pivot: Dòng là địa điểm, Cột là Thời gian, Giá trị là AQI
     pivot_df = df_heatmap.pivot_table(
         index=META_COLUMN, 
-        columns=df_heatmap[TIME_COLUMN].dt.strftime('%H:00 %d/%m'), 
+        columns=TIME_COLUMN,
         values="aqi"
     )
+
+    # NỘI SUY TRÊN BẢNG PIVOT (Lấp đầy ô trống do API mất dòng)
+    # axis=1 nghĩa là nội suy theo chiều ngang (theo thời gian)
+    pivot_df = pivot_df.interpolate(method='linear', axis=1, limit_direction='both')
+
+    # FORMAT LẠI TEXT CỘT SAU KHI ĐÃ SẮP XẾP ĐÚNG
+    pivot_df.columns = pivot_df.columns.strftime('%H:00 %d/%m')
+
+    # Phân bổ tỷ lệ % (từ 0 đến 500)
+    aqi_colorscale = [
+        [0.0, "#00E400"],     # Tốt (0 - 50)
+        [0.1, "#FFFF00"],     # Trung bình (51 - 100)
+        [0.2, "#FF7E00"],     # Kém (101 - 150)
+        [0.3, "#FF0000"],     # Xấu (151 - 200)
+        [0.4, "#8F3F97"],     # Rất xấu (201 - 300)
+        [0.6, "#7E0023"],     # Nguy hại (301 - 500)
+        [1.0, "#7E0023"]      # Chặn trên
+    ]
 
     fig_heatmap = px.imshow(
         pivot_df,
         labels=dict(x="Thời gian", y="Địa điểm", color="Chỉ số AQI"),
         x=pivot_df.columns,
         y=pivot_df.index,
-        color_continuous_scale="RdYlGn_r", # Đỏ (Xấu) -> Vàng -> Xanh (Tốt)
+        color_continuous_scale=aqi_colorscale,
+        range_color=[0, 500], # Ép khoảng dữ liệu từ 0 đến 500 để màu ánh xạ chính xác
         aspect="auto"
     )
+    
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
 
