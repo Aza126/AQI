@@ -34,7 +34,7 @@ copy .env.example .env
 ###### B4: Download needed librabies
 ```bash
 pip install --upgrade pip
-pip install -r requirements-dev.txt
+pip install -r requirements.txt
 ```
 ###### Run dashboard
 ```bash
