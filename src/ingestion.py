@@ -15,7 +15,7 @@ def fetch_air_quality(lat: float, lon: float, config):
         "latitude": lat,
         "longitude": lon,
         "timezone": "UTC", # Luôn lấy giờ chuẩn UTC
-        "past_days": 3, # Lấy dữ liệu của 4 ngày trước đó
+        "past_days": 7, # Lấy dữ liệu của 7 ngày trước đó
     }
 
     # 1. Gọi API Lấy chất lượng không khí (từ base_url trong config.yaml)
