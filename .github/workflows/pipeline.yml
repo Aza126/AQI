@@ -28,11 +28,6 @@ jobs:
         MONGO_URI: ${{ secrets.MONGO_URI }}
       run: python -m src.ingestion
 
-    - name: Preprocess Data
-      env:
-        MONGO_URI: ${{ secrets.MONGO_URI }}
-      run: python -m src.preprocess
-
     - name: Download Models
       env:
         MONGO_URI: ${{ secrets.MONGO_URI }}
@@ -41,6 +36,11 @@ jobs:
         DRIVE_ID_RF: ${{ secrets.DRIVE_ID_RF }}
         DRIVE_ID_LSTM: ${{ secrets.DRIVE_ID_LSTM }}
       run: python -m src.scripts.download_model
+
+    - name: Preprocess Data
+      env:
+        MONGO_URI: ${{ secrets.MONGO_URI }}
+      run: python -m src.preprocess
 
     - name: Inference
       env:
