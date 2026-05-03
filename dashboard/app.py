@@ -41,7 +41,7 @@ def load_data():
     return df_raw, df_pred
 
 def main():
-    st.title("Hệ Thống Theo Dõi & Dự Báo Chất Lượng Không Khí")
+    st.title("Hệ Thống Theo Dõi & Dự Báo AQI")
     
     try:
         df_raw, df_pred = load_data()
