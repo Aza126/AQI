@@ -10,7 +10,7 @@ from src.common.schema import TIME_COLUMN, META_COLUMN, TARGET_COLUMN
 # 1. Cấu hình trang
 st.set_page_config(page_title="AQI Monitoring & Forecasting", layout="wide")
 
-@st.cache_data(ttl=300)  # Cache dữ liệu 5 phút một lần
+@st.cache_data(ttl=3600)  # Cache dữ liệu 1 tiếng một lần
 def load_data():
     config = load_config()
     raw_col = get_collection(config, "raw_collection")
@@ -127,11 +127,8 @@ def main():
 
     st.subheader("Bản đồ nhiệt AQI")
 
-    # Chuẩn bị dữ liệu cho Heatmap (Lấy top 100 bản ghi mới nhất)
+    # Chuẩn bị dữ liệu cho Heatmap (Lấy 100 bản ghi mới nhất)
     df_heatmap = df_raw.copy()
-
-
-
     df_heatmap["aqi"] = df_heatmap["pm2_5"].apply(calculate_aqi_pm25)
 
     # Tạo bảng pivot: Dòng là địa điểm, Cột là Thời gian, Giá trị là AQI
