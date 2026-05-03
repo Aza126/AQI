@@ -1,7 +1,6 @@
-# src/ingestion.py
 import requests
 import pandas as pd
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import time
 
 from src.common.utils import load_config, logger
@@ -11,15 +10,22 @@ from src.common.schema import TIME_COLUMN, META_COLUMN, RAW_COLUMNS
 def fetch_air_quality(lat: float, lon: float, config):
     base_url = config["api"]["base_url"]
     weather_url = config["api"]["weather_url"]
+    
+    # TÍNH TOÁN THỜI GIAN: Lấy từ 24h trước (giờ này hôm qua) đến hiện tại
+    # Lùi lại thêm 1 giờ đệm để đảm bảo không sót dữ liệu do API cập nhật chậm
+    now_utc = datetime.now(timezone.utc)
+    start_time = (now_utc - timedelta(days=1, hours=1)).strftime('%Y-%m-%d')
+    end_time = now_utc.strftime('%Y-%m-%d')
+
     common_params = {
         "latitude": lat,
         "longitude": lon,
-        "timezone": "UTC", # Luôn lấy giờ chuẩn UTC
-        "past_days": 4, # Lấy dữ liệu của 4 ngày trước đó
-        "forecast_days": 1 # Chỉ lấy thêm 1 ngày dự báo (hoặc set = 0 nếu chỉ muốn lấy quá khứ)
+        "timezone": "UTC",
+        "start_date": start_time,
+        "end_date": end_time
     }
 
-    # 1. Gọi API Lấy chất lượng không khí (từ base_url trong config.yaml)
+    # 1. Gọi API Lấy chất lượng không khí
     aqi_params = common_params.copy()
     aqi_params["hourly"] = "pm2_5,pm10,nitrogen_dioxide,ozone,carbon_monoxide"
     
@@ -27,7 +33,7 @@ def fetch_air_quality(lat: float, lon: float, config):
     aqi_response.raise_for_status()
     aqi_data = aqi_response.json()
 
-    # 2. Gọi API Lấy thời tiết (từ weather_url)
+    # 2. Gọi API Lấy thời tiết
     weather_params = common_params.copy()
     weather_params["hourly"] = "temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m"
     
@@ -35,23 +41,28 @@ def fetch_air_quality(lat: float, lon: float, config):
     weather_response.raise_for_status()
     weather_data = weather_response.json()
 
-    # 3. Gộp chung dữ liệu (Merge dictionary)
+    # 3. Gộp dữ liệu
     combined_hourly = aqi_data.get("hourly", {})
-    combined_hourly.update(weather_data.get("hourly", {})) # Nhét thêm data thời tiết vào
-
+    combined_hourly.update(weather_data.get("hourly", {}))
     aqi_data["hourly"] = combined_hourly
 
-    return aqi_data # Trả về data đã gộp chung hoàn chỉnh
+    return aqi_data
 
 def transform_raw(data: dict, city_name: str):
     hourly = data.get("hourly", {})
     times = hourly.get("time", [])
     records = []
 
+    # Lấy giờ hiện tại (làm tròn đầu giờ) để lọc bỏ các bản ghi dự báo quá xa trong tương lai
+    now_limit = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+
     for i, t in enumerate(times):
-        # Lưu vào MongoDB dưới dạng object datetime (UTC)
         dt_obj = datetime.fromisoformat(t).replace(tzinfo=timezone.utc)
         
+        # Chỉ lấy dữ liệu từ quá khứ đến hiện tại (không lấy dự báo tương lai của API vào db_raw)
+        if dt_obj > now_limit:
+            continue
+
         record = {
             TIME_COLUMN: dt_obj,
             META_COLUMN: city_name
@@ -59,7 +70,6 @@ def transform_raw(data: dict, city_name: str):
 
         for col in RAW_COLUMNS:
             values = hourly.get(col, [])
-            # Chuyển về float để tránh lỗi định dạng khi training
             val = values[i] if i < len(values) else None
             record[col] = float(val) if val is not None else None
 
@@ -81,45 +91,32 @@ def run_ingestion():
             all_records.extend(records)
         except Exception as e:
             logger.error(f"Failed to fetch {loc['name']}: {e}")
-            time.sleep(5) # Nếu lỗi, đợi lâu hơn trước khi thử tiếp
-        time.sleep(2) # Thêm delay để tránh bị rate limit
+            time.sleep(5)
+        time.sleep(2)
 
     if all_records:
-        # 1. Tìm mốc thời gian mới nhất hiện có trong DB
+        # Lọc bản ghi mới dựa trên DB hiện tại
         latest_record = collection.find_one(sort=[(TIME_COLUMN, -1)])
         
         if latest_record:
             latest_time = latest_record[TIME_COLUMN]
-
-            # Kiểm tra nếu latest_time từ DB đã có múi giờ (aware) 
-            # thì đảm bảo dữ liệu mới cũng phải có múi giờ để so sánh
-            new_records = []
-            for r in all_records:
-                # Ép kiểu timestamp của record mới sang UTC nếu nó chưa có múi giờ
-                r_time = r[TIME_COLUMN]
-                if r_time.tzinfo is None:
-                    r_time = r_time.replace(tzinfo=timezone.utc)
-                
-                # Ép kiểu latest_time sang UTC nếu nó chưa có múi giờ
-                compare_latest = latest_time
-                if compare_latest.tzinfo is None:
-                    compare_latest = compare_latest.replace(tzinfo=timezone.utc)
-                # 2. Lọc: Chỉ lấy các bản ghi có timestamp lớn hơn latest_time
-                if r_time > compare_latest:
-                    new_records.append(r)
+            if latest_time.tzinfo is None:
+                latest_time = latest_time.replace(tzinfo=timezone.utc)
+            
+            new_records = [r for r in all_records if r[TIME_COLUMN] > latest_time]
         else:
-            # Nếu DB trống, lấy toàn bộ
             new_records = all_records
 
-        # 3. Chèn dữ liệu mới
         if new_records:
             try:
-                collection.insert_many(new_records, ordered=False) # ordered=False để bỏ qua lỗi trùng lặp nếu có
-                logger.info(f"Đã chèn thêm {len(new_records)} bản ghi mới.")
+                # Sắp xếp theo thời gian để đảm bảo thứ tự chèn
+                new_records.sort(key=lambda x: x[TIME_COLUMN])
+                collection.insert_many(new_records, ordered=False)
+                logger.info(f"Inserted {len(new_records)} new records.")
             except Exception as e:
-                logger.error(f"Lỗi khi chèn dữ liệu: {e}")
+                logger.error(f"Error inserting records: {e}")
         else:
-            logger.info("Dữ liệu đã cũ hoặc trùng lặp. Không có gì để cập nhật.")
+            logger.info("No new data to update.")
 
 if __name__ == "__main__":
     run_ingestion()
