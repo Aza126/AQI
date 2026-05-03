@@ -8,12 +8,6 @@ locations:
   - name: "Ho Chi Minh"
     lat: 10.8231
     lon: 106.6297
-  - name: "Hue"
-    lat: 16.4637
-    lon: 107.5909
-  - name: "Da Nang"
-    lat: 16.0678
-    lon: 108.2208
   - name: "Nha Trang"
     lat: 12.2388
     lon: 109.1967
@@ -26,7 +20,7 @@ api:
   weather_url: "https://api.open-meteo.com/v1/forecast"
 
 mongo:
-  db_name: "aqi_db"
+  db_name: "H_test_db"
   raw_collection: "db_raw"
   processed_collection: "db_processed"
   prediction_collection: "db_predictions"

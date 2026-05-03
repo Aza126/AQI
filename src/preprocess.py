@@ -1,6 +1,7 @@
 # src/preprocess.py
 import pandas as pd
 import numpy as np
+from datetime import timedelta
 from src.common.utils import load_config, load_pickle, logger
 from src.common.database import get_collection
 from src.common.schema import (
@@ -35,7 +36,7 @@ def preprocess_df(df: pd.DataFrame, scaler):
     
     # 1. Nội suy dữ liệu thiếu (Xử lý các ô trống cảm biến)
     # Thay vì: df[RAW_COLUMNS] = df[RAW_COLUMNS].interpolate(...)
-    # Hãy áp dụng nội suy theo từng thành phố để tránh ảnh hưởng chéo giữa các tỉnh:
+    # Áp dụng nội suy theo từng thành phố để tránh ảnh hưởng chéo giữa các tỉnh:
     df[RAW_COLUMNS] = df.groupby(META_COLUMN)[RAW_COLUMNS].transform(
         lambda x: x.interpolate(method='linear', limit_direction='both')
     )
@@ -58,7 +59,7 @@ def preprocess_df(df: pd.DataFrame, scaler):
 
 def run_preprocess():
     """Hàm chạy để đẩy dữ liệu đã xử lý lên MongoDB (Processed Collection)."""
-    logger.info("⚡ Đang thực hiện tiền xử lý dữ liệu...")
+    logger.info("⚡Đang thực hiện tiền xử lý dữ liệu...")
     config = load_config()
     raw_col = get_collection(config, "raw_collection")
     processed_col = get_collection(config, "processed_collection")
@@ -67,9 +68,11 @@ def run_preprocess():
     # Tìm mốc thời gian cuối cùng đã xử lý
     latest_record = processed_col.find_one(sort=[(TIME_COLUMN, -1)])
     query = {}
+
     if latest_record:
-        # Chỉ lấy dữ liệu thô mới hơn mốc đã xử lý
-        query = {TIME_COLUMN: {"$gt": latest_record[TIME_COLUMN]}}
+        # FIX LOGIC: Thay vì lấy lớn hơn, ta lấy LÙI LẠI 3 TIẾNG để làm "ngữ cảnh" (context) cho hàm shift()
+        overlap_time = latest_record[TIME_COLUMN] - timedelta(hours=3)
+        query = {TIME_COLUMN: {"$gt": overlap_time}}
     
     data = list(raw_col.find(query, {"_id": 0}))
     if not data:
@@ -78,6 +81,18 @@ def run_preprocess():
 
     df = pd.DataFrame(data)
     X_scaled, df_processed = preprocess_df(df, scaler)
+
+    # Sau khi shift xong, ta chỉ lọc giữ lại những dòng thực sự mới để lưu vào DB (tránh lưu trùng)
+    if latest_record:
+        # Lọc df_processed để chỉ lấy các dòng có thời gian lớn hơn mốc đã xử lý cuối cùng
+        # (X_scaled là ma trận numpy nên ta phải dùng mask của pandas để lọc tương ứng)
+        mask = df_processed[TIME_COLUMN] > latest_record[TIME_COLUMN]
+        df_processed = df_processed[mask]
+        X_scaled = X_scaled[mask.values]
+
+    if df_processed.empty:
+        logger.info("Không có bản ghi mới nào được tạo ra sau khi làm sạch.")
+        return None, None
 
     # Chuyển đổi để lưu lên Atlas
     processed_records = []
