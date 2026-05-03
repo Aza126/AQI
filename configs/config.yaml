@@ -8,9 +8,6 @@ locations:
   - name: "Ho Chi Minh"
     lat: 10.8231
     lon: 106.6297
-  - name: "Nha Trang"
-    lat: 12.2388
-    lon: 109.1967
   - name: "Ha Long"
     lat: 20.9505
     lon: 107.0733
