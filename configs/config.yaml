@@ -20,7 +20,7 @@ api:
   weather_url: "https://api.open-meteo.com/v1/forecast"
 
 mongo:
-  db_name: "H_test_db"
+  db_name: "aqi_db"
   raw_collection: "db_raw"
   processed_collection: "db_processed"
   prediction_collection: "db_predictions"
