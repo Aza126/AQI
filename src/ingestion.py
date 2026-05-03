@@ -86,7 +86,6 @@ def run_ingestion():
 
     if all_records:
         # 1. Tìm mốc thời gian mới nhất hiện có trong DB
-        # Giả sử trường thời gian là 'timestamp'
         latest_record = collection.find_one(sort=[(TIME_COLUMN, -1)])
         
         if latest_record:
