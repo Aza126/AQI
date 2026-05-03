@@ -1,4 +1,5 @@
 import requests
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import pandas as pd
 from datetime import datetime, timezone, timedelta
 import time
@@ -6,6 +7,19 @@ import time
 from src.common.utils import load_config, logger
 from src.common.database import get_collection
 from src.common.schema import TIME_COLUMN, META_COLUMN, RAW_COLUMNS
+
+# Định nghĩa hàm gọi API có cơ chế Retry
+# Thử lại 3 lần, bắt đầu đợi 2s, sau đó 4s, 8s nếu lỗi mạng/timeout
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type((requests.exceptions.RequestException, requests.exceptions.Timeout)),
+    before_sleep=lambda retry_state: logger.warning(f"Đang thử lại lần {retry_state.attempt_number}...")
+)
+def safe_requests_get(url, params):
+    response = requests.get(url, params=params, timeout=20)
+    response.raise_for_status()
+    return response.json()
 
 def fetch_air_quality(lat: float, lon: float, config):
     base_url = config["api"]["base_url"]
@@ -25,21 +39,15 @@ def fetch_air_quality(lat: float, lon: float, config):
         "end_date": end_time
     }
 
-    # 1. Gọi API Lấy chất lượng không khí
+    # 1. Gọi API AQI - sử dụng hàm safe_requests_get
     aqi_params = common_params.copy()
     aqi_params["hourly"] = "pm2_5,pm10,nitrogen_dioxide,ozone,carbon_monoxide"
-    
-    aqi_response = requests.get(base_url, params=aqi_params, timeout=20)
-    aqi_response.raise_for_status()
-    aqi_data = aqi_response.json()
+    aqi_data = safe_requests_get(base_url, aqi_params)
 
-    # 2. Gọi API Lấy thời tiết
+    # 2. Gọi API thời tiết
     weather_params = common_params.copy()
     weather_params["hourly"] = "temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m"
-    
-    weather_response = requests.get(weather_url, params=weather_params, timeout=20)
-    weather_response.raise_for_status()
-    weather_data = weather_response.json()
+    weather_data = safe_requests_get(weather_url, weather_params)
 
     # 3. Gộp dữ liệu
     combined_hourly = aqi_data.get("hourly", {})
