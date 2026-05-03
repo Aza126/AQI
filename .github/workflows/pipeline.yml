@@ -31,7 +31,7 @@ jobs:
     - name: Preprocess Data
       env:
         MONGO_URI: ${{ secrets.MONGO_URI }}
-      run: python -m src.preprocessing
+      run: python -m src.preprocess
 
     - name: Download Models
       env:
